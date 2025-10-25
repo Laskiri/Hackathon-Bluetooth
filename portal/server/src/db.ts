@@ -285,3 +285,33 @@ export async function findTeamsByName(name: string): Promise<Team[]> {
 	const db = await ensureDb();
 	return Object.values(db.teams ?? {}).filter((t) => (t.name ?? "").toLowerCase() === q);
 }
+export async function getLeaderboard(): Promise<
+	{ id: string; name: string; createdAt: string; solved: boolean; score: number }[]
+> {
+	const db = await ensureDb();
+	const teams = Object.values(db.teams ?? {});
+
+	const entries = teams.map((t) => {
+		// handle both object keyed fragments and legacy array shape
+		const fragmentValues = Array.isArray((t as any).fragments) ? (t as any).fragments : Object.values(t.fragments ?? {});
+		const totalScore = fragmentValues.reduce((acc: number, f: any) => acc + (typeof f?.score === "number" ? f.score : 0), 0);
+		return {
+			id: t.id,
+			name: t.name,
+			createdAt: t.createdAt,
+			solved: !!t.solved,
+			score: totalScore,
+		};
+	});
+
+	// Sort: solved teams first, then by score descending, then by createdAt ascending
+	entries.sort((a, b) => {
+		if (a.solved !== b.solved) return a.solved ? -1 : 1;
+		if (b.score !== a.score) return b.score - a.score;
+		const aTs = Date.parse(a.createdAt ?? "");
+		const bTs = Date.parse(b.createdAt ?? "");
+		return (isNaN(aTs) ? 0 : aTs) - (isNaN(bTs) ? 0 : bTs);
+	});
+
+	return entries;
+}

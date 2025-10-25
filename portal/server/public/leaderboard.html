@@ -1,0 +1,102 @@
+<!-- name=portal/server/public/leaderboard.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Leaderboard — Harald Bluetooth</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin: 24px; color: #111; }
+    h1 { margin-bottom: 8px; }
+    button { padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; background: #fafafa; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    .solved { color: green; font-weight: 600; }
+    .small { font-size: 0.9rem; color: #666; }
+    .center { text-align: center; }
+    #message { margin-top: 8px; color: #d00; }
+  </style>
+</head>
+<body>
+  <h1>Leaderboard</h1>
+  <div>
+    <button id="refreshBtn">Refresh</button>
+    <button id="backBtn">Back to app</button>
+  </div>
+
+  <div id="message" role="status" aria-live="polite"></div>
+  <div id="board"><p class="small">Loading...</p></div>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    async function fetchLeaderboard() {
+      const container = document.getElementById("board");
+      const messageEl = document.getElementById("message");
+      messageEl.textContent = "";
+      container.innerHTML = '<p class="small">Loading...</p>';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/leaderboard`);
+        if (!res.ok) {
+          const txt = await res.text();
+          messageEl.textContent = 'Failed to fetch leaderboard: ' + txt;
+          container.innerHTML = '';
+          return;
+        }
+        const data = await res.json();
+        renderLeaderboard(data);
+      } catch (err) {
+        messageEl.textContent = 'Error: ' + (err && err.message ? err.message : String(err));
+        container.innerHTML = '';
+      }
+    }
+
+    function renderLeaderboard(rows) {
+      const container = document.getElementById("board");
+      if (!rows || rows.length === 0) {
+        container.innerHTML = '<p>No teams yet.</p>';
+        return;
+      }
+
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Rank</th><th>Team</th><th class="center">Score</th><th>Created</th><th>Solved</th></tr>';
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      rows.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        const solvedClass = r.solved ? 'solved' : '';
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${escapeHtml(r.name)}</td>
+          <td class="center">${r.score}</td>
+          <td>${new Date(r.createdAt).toLocaleString()}</td>
+          <td class="${solvedClass}">${r.solved ? 'Yes' : 'No'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+
+      container.innerHTML = '';
+      container.appendChild(table);
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', fetchLeaderboard);
+    document.getElementById('backBtn').addEventListener('click', () => { window.location.href = '/'; });
+    fetchLeaderboard();
+  </script>
+</body>
+</html>

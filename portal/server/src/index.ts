@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import {
 	createTeam,
 	getTeam,
@@ -7,7 +8,8 @@ import {
 	verifyTeamPassword,
 	getLatestTeam,
 	findTeamsByName,
-	completeRunestone
+	completeRunestone,
+	getLeaderboard
 } from "./db.js";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -134,6 +136,33 @@ app.post("/api/verify", async (req, res) => {
 	} else {
 		return res.json({ success: false, message: result.message ?? "Incorrect" });
 	}
+});
+
+//app.get("/api/leaderboard", async (req, res) => {
+//      try {
+//      	const leaderboard = await getLeaderboard();
+//      	return res.json(leaderboard);
+//      } catch (err) {
+//      	console.error("GET /api/leaderboard error:", err);
+//      	return res.status(500).json({ error: "internal server error" });
+//      }
+//});
+
+app.get("/api/leaderboard", async (req, res) => {
+	try {
+		const board = await getLeaderboard();
+		return res.json(board);
+	} catch (err) {
+		console.error("GET /api/leaderboard error:", err);
+		return res.status(500).json({ error: "internal server error" });
+	}
+});
+
+// Serve static standalone leaderboard page
+app.get("/leaderboard-ui", (req, res) => {
+	// When running from portal/server, process.cwd() should be the server directory.
+	// This looks for portal/server/public/leaderboard.html
+	res.sendFile(path.join(process.cwd(), "public", "leaderboard.html"));
 });
 
 app.get("/api/health", async (req, res) => {
