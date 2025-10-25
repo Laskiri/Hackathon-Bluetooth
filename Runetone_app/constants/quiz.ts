@@ -13,13 +13,11 @@ export interface Question {
 
 export interface QuizData {
   questions: Question[];
-  runestoneCode: string;
   runestoneName?: string;
 }
 
 export const QUIZ_DATA: QuizData = {
-  runestoneCode: 'Harald',
-  runestoneName: 'Elder Runestone',
+  runestoneName: 'Artefacts Runestone',
   questions: [
     {
       id: 'q1',

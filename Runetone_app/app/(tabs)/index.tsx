@@ -10,6 +10,8 @@ import { ThemedView } from '@/components/themed-view';
 import useBleScanner from '@/hooks/use-ble-scanner';
 import { ARTIFACTS, Artifact } from '@/constants/artifacts';
 import { QUIZ_DATA } from '@/constants/quiz';
+import useApi from '@/hooks/use-api';
+import { useTeam } from '@/context/team';
 
 export default function DetectionScreen() {
   const router = useRouter();
@@ -17,47 +19,61 @@ export default function DetectionScreen() {
   const buttonSecondary = useThemeColor({}, 'buttonSecondary');
   const buttonPrimary = useThemeColor({}, 'buttonPrimary');
   const cardBackground = useThemeColor({}, 'cardBackground');
+  const text = useThemeColor({}, 'text');
   const border = useThemeColor({}, 'border');
   const accent = useThemeColor({}, 'accent');
   const incorrectAnswer = useThemeColor({}, 'incorrectAnswer');
   const textSecondary = useThemeColor({}, 'textSecondary');
   const [pulseAnim] = useState(() => new Animated.Value(1));
+  const [ctaAnim] = useState(() => new Animated.Value(1));
   const prevCountRef = useRef(0);
-  const [team, setTeam] = useState<any | null>(null);
-  const teamRetryRef = useRef<number | null>(null);
+  const teamRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { data: team, get } = useApi('/api/getLatestTeam');
+  const { setTeam } = useTeam();
 
   useEffect(() => {
-    // Poll /api/teams/latest until a team object is returned.
     let mounted = true;
 
-    async function fetchLatest() {
+    const clearRetry = () => {
+      if (teamRetryRef.current) {
+        clearTimeout(teamRetryRef.current);
+        teamRetryRef.current = null;
+      }
+    };
+
+    async function attempt() {
       try {
-        const res = await fetch(`${API_BASE.replace(/\/$/, '')}/api/teams/latest`);
+        const result = await get(); // returns parsed JSON and sets `data` inside the hook
         if (!mounted) return;
-        if (res.ok) {
-          const json = await res.json();
-          // assume server returns null when no active team, or an object when present
-          if (json && Object.keys(json).length > 0) {
-            setTeam(json);
-            return;
+        if (result) {
+          console.log('got team', result);
+          try {
+            setTeam(result);
+          } catch (e) {
+            // in case provider isn't mounted yet
+            console.warn('could not set team in context', e);
           }
+          clearRetry();
+        } else {
+          console.log('no team returned (server returned null/empty), retrying in 2s');
+          clearRetry();
+          teamRetryRef.current = setTimeout(attempt, 2000);
         }
       } catch (err) {
-        // ignore network errors while polling
-        if (__DEV__) console.debug('[DetectionScreen] fetchLatest error', err);
+        console.warn('fetch failed, will retry in 2s', err);
+        if (!mounted) return;
+        clearRetry();
+        teamRetryRef.current = setTimeout(attempt, 2000);
       }
-      // retry in 5s
-      if (!mounted) return;
-      teamRetryRef.current = (setTimeout(fetchLatest, 5000) as unknown) as number;
     }
 
-    fetchLatest();
+    attempt();
 
     return () => {
       mounted = false;
-      if (teamRetryRef.current != null) clearTimeout(teamRetryRef.current as any);
+      clearRetry();
     };
-  }, []);
+  }, [get, setTeam]);
 
 
   useEffect(() => {
@@ -74,14 +90,21 @@ export default function DetectionScreen() {
   }, [detectedArtifacts.length, pulseAnim]);
 
   useEffect(() => {
-    if (allArtifactsDetected) {
+    if (allArtifactsDetected || true) {
       // small haptic to indicate completion and navigate to quiz after a moment
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      const t = setTimeout(() => router.push('./quiz'), 800);
-      return () => clearTimeout(t);
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(ctaAnim, { toValue: 1.06, duration: 400, useNativeDriver: true }),
+          Animated.timing(ctaAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => {
+        pulse.stop();
+      };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allArtifactsDetected]);
+  }, [allArtifactsDetected, ctaAnim, router]);
 
   // start scanning only after we have a team
   useEffect(() => {
@@ -91,7 +114,6 @@ export default function DetectionScreen() {
     }
     // if no team yet, ensure scanning stopped
     stopScanning();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [team]);
 
   const progress = Math.round((detectedArtifacts.length / ARTIFACTS.length) * 100);
@@ -108,16 +130,16 @@ export default function DetectionScreen() {
   const renderItem = ({ item }: { item: Artifact }) => {
     const found = detectedArtifacts.some(d => d.id === item.id);
     return (
-      <Animated.View style={[styles.artifactRow, { transform: [{ scale: found ? pulseAnim : 1 }], backgroundColor: cardBackground, borderColor: border }]}>
+      <Animated.View style={[styles.artifactRow, { transform: [{ scale: found ? pulseAnim : 1 }], backgroundColor: found ? buttonPrimary : cardBackground, borderColor: border }]}>
         <View style={styles.artifactInfo}>
-          <ThemedText type="subtitle">{item.name}</ThemedText>
-          <ThemedText>{item.description}</ThemedText>
+          <ThemedText style={[{color: found ? textSecondary : text}]} type="subtitle" >{item.name}</ThemedText>
+          <ThemedText style={[{color: found ? textSecondary : text}]}> {item.description}</ThemedText>
         </View>
         <View style={styles.statusContainer}>
           {found ? (
-            <ThemedText type="defaultSemiBold" style={{ color: accent }}>Found</ThemedText>
+            <ThemedText type="defaultSemiBold" style={{ color: buttonSecondary, fontSize: 48, lineHeight: 56, textAlign: 'right', marginRight: 12 }} accessibilityLabel="Found">✓</ThemedText>
           ) : (
-            <ThemedText>Searching…</ThemedText>
+            <ThemedText>Activate</ThemedText>
           )}
         </View>
       </Animated.View>
@@ -140,10 +162,26 @@ export default function DetectionScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Animated.View style={[styles.header, { transform: [{ scale: pulseAnim }] }]}>
-        {QUIZ_DATA.runestoneName ? <ThemedText type="defaultSemiBold">{QUIZ_DATA.runestoneName + " " + team.name}</ThemedText> : null}
-        <ThemedText type="title">Artifact Detection</ThemedText>
-        <ThemedText>{progress}% found</ThemedText>
+      <Animated.View style={[styles.header, { marginTop: 24 }]}>
+        <View style={styles.headerRow}>
+          <View style={[styles.teamBadge, { backgroundColor: buttonPrimary, borderColor: border, width: 350,  }]}>
+            <ThemedText type="defaultSemiBold" style={{ color: textSecondary, alignSelf: 'center' }}>{team.name}</ThemedText>
+            
+          </View>
+          {QUIZ_DATA.runestoneName ? (
+            <ThemedText type="defaultSemiBold">{QUIZ_DATA.runestoneName}</ThemedText>
+            ) : null}      
+
+        </View>
+
+        <ThemedText type="title" style={{ marginTop: 8 }}>Artifact Detection</ThemedText>
+
+        <View style={styles.progressContainer} accessibilityRole="progressbar" accessibilityValue={{ now: progress, min: 0, max: 100 }}>
+          <View style={[styles.progressBar, { backgroundColor: cardBackground, borderColor: border }]}>
+            <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: accent }]} />
+          </View>
+          <ThemedText style={styles.progressText}>{progress}% found</ThemedText>
+        </View>
       </Animated.View>
 
       {error ? <ThemedText style={[styles.error, { color: incorrectAnswer }]}>{error}</ThemedText> : null}
@@ -156,21 +194,50 @@ export default function DetectionScreen() {
         ItemSeparatorComponent={() => <View style={styles.sep} />}
       />
 
-      <ThemedText style={{ marginTop: 12 }} type="subtitle">Nearby Devices</ThemedText>
+      {/* <ThemedText style={{ marginTop: 12 }} type="subtitle">Nearby Devices</ThemedText>
       <FlatList
         data={scannedDevices}
         keyExtractor={d => d.id}
         renderItem={renderDevice}
         contentContainerStyle={{ paddingVertical: 8 }}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
-      />
+      /> */}
 
   <View style={styles.footer}>
-        <ThemedText>{`Detected ${detectedArtifacts.length} of ${ARTIFACTS.length}`}</ThemedText>
-        {allArtifactsDetected || true  ? (
-          <TouchableOpacity style={[styles.cta, { backgroundColor: buttonPrimary }]} onPress={() => router.push('./quiz')}>
-            <ThemedText type="defaultSemiBold" style={{ color: textSecondary }}>Take Quiz</ThemedText>
-          </TouchableOpacity>
+        {allArtifactsDetected || true ? (
+          <Animated.View style={{ transform: [{ scale: ctaAnim }] }}>
+            <TouchableOpacity
+              style={[
+                styles.cta,
+                styles.ctaActive,
+                {
+                  backgroundColor: buttonPrimary,
+                  borderColor: accent,
+                  borderWidth: 2,
+                  shadowColor: accent,
+                  shadowOpacity: 0.35,
+                  shadowRadius: 18,
+                  width: 350,
+                  height: 120,
+                  shadowOffset: { width: 0, height: 10 },
+                  elevation: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 72,
+
+
+                },
+              ]}
+              onPress={() => router.push('./quiz')}
+              accessibilityRole="button"
+              accessibilityLabel="Take Quiz"
+            >
+              <ThemedText type="defaultSemiBold" style={{ color: buttonSecondary, fontSize: 32, fontWeight: 900 }}>
+                Take Quiz
+              </ThemedText>
+            </TouchableOpacity>
+          </Animated.View>
         ) : null}
       </View>
     </ThemedView>
@@ -178,7 +245,7 @@ export default function DetectionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16, },
   header: { alignItems: 'center', marginBottom: 12 },
   list: { paddingVertical: 8 },
   artifactRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8, backgroundColor: 'transparent' },
@@ -188,8 +255,15 @@ const styles = StyleSheet.create({
   sep: { height: 8 },
   controls: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   button: { padding: 10, borderRadius: 8 },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12 },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, },
   cta: { padding: 10, borderRadius: 8 },
   error: { marginVertical: 8 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  headerRow: { flexDirection: 'column', width: '100%', justifyContent: 'space-between', alignItems: 'center' },
+  teamBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+  progressContainer: { width: '100%', marginTop: 12, alignItems: 'center' },
+  progressBar: { width: '100%', height: 10, borderRadius: 8, overflow: 'hidden', borderWidth: 1 },
+  progressFill: { height: '100%', borderRadius: 8 },
+  progressText: { marginTop: 6 },
+  ctaActive: { paddingHorizontal: 18, paddingVertical: 12, borderRadius: 10, elevation: 6, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
 });

@@ -31,8 +31,9 @@ export default function useApi<T = any>(endpoint: string) {
           signal: controller.signal,
         };
         if (body !== undefined) init.body = JSON.stringify(body);
-
+        console.log(url)
         const res = await fetch(url, init);
+        console.log(res)
         const text = await res.text();
         let parsed: any = null;
         try {
