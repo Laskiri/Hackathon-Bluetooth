@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, TouchableOpacity, View, ImageBackground, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import {API_BASE} from "@/constants/api";
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -24,7 +25,43 @@ export default function ResultScreen() {
   const endpoint = team ? `/api/teams/${team.id}/fragments/0` : '';
   const { data: codeFragement, get: getFragment } = useApi(endpoint);
   const [scrambleEnded, setScrambleEnded] = useState(false)
+  const [posted, setPosted] = useState(false);
 
+  async function postCompletion() {
+  if (posted || codeFragement.fragment.solved == true) return;
+  const fragmentId = codeFragement?.index ?? codeFragement?.fragment?.id;
+  if (!fragmentId || !team?.id) {
+    console.log(codeFragement.index, team.id)
+    console.warn('Missing fragmentId or team id — cannot post completion yet');
+    return;
+  }
+
+  const postEndpoint = API_BASE + `/api/teams/${team.id}/runestone/${fragmentId}`; // adapt path
+  try {
+    setPosted(true);
+    const res = await fetch(postEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // add auth header here if your API requires it
+      },
+      body: JSON.stringify({ completedAt: new Date().toISOString() }),
+    });
+    if (!res.ok) {
+      setPosted(false); // allow retry
+      const text = await res.text();
+      console.error('Post failed', res.status, text);
+      // optionally show a toast or set an error state
+      return;
+    }
+    const json = await res.json();
+    console.log('Post success', json);
+    // optionally update UI/state
+  } catch (err) {
+    setPosted(false);
+    console.error('Post error', err);
+  }
+}
   useEffect(() => {
     if (team && getFragment) {
       // fetch fragment for this team (index 0 for now)
@@ -72,6 +109,7 @@ export default function ResultScreen() {
       ]).start(() => {
         setDisplayText(finalText);
         setScrambleEnded(true);
+        postCompletion();
         Animated.timing(boxAnim, {
           toValue: 1,
           duration: 360,

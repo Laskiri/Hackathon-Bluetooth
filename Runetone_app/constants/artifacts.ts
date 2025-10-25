@@ -9,9 +9,9 @@ export interface Artifact {
 export const ARTIFACTS: Artifact[] = [
   {
     id: 'artifact-1',
-    name: 'Viking Sword',
+    name: 'Artifact',
     description: 'A ceremonial sword believed to be from the late Viking age.',
-    ble_local_name: 'Artifact Sword',
+    ble_local_name: 'Artifact',
     detected: false,
   },
   {
