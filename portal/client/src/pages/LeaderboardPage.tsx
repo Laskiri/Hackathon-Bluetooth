@@ -1,5 +1,5 @@
-// name=portal/client/src/pages/LeaderboardPage.tsx
 import React, { useEffect, useState } from "react";
+import { getLeaderboard } from "../api"; // use the helper
 
 type LeaderboardEntry = { id: string; name: string; createdAt: string; solved: boolean; score: number; };
 
@@ -8,16 +8,21 @@ export default function LeaderboardPage() {
 	const [err, setErr] = useState<string | null>(null);
 
 	useEffect(() => {
-		const api = (import.meta as any).env?.VITE_API_URL ?? "";
-		// If you set VITE_API_URL to "http://localhost:4000" this will use it.
-		const url = api ? `${api}/api/leaderboard` : `/api/leaderboard`;
-		fetch(url)
-			.then(r => {
-				if (!r.ok) throw new Error(`status ${r.status}`);
-				return r.json();
+		let mounted = true;
+		setRows(null);
+		setErr(null);
+		getLeaderboard()
+			.then((data) => {
+				if (!mounted) return;
+				setRows(data);
 			})
-			.then(data => setRows(data))
-			.catch(e => setErr(String(e)));
+			.catch((e) => {
+				console.error("Leaderboard fetch error:", e);
+				if (!mounted) return;
+				setErr(String(e));
+				setRows([]);
+			});
+		return () => { mounted = false; };
 	}, []);
 
 	if (err) return <div style={{ padding: 16, color: "red" }}>Error loading leaderboard: {err}</div>;

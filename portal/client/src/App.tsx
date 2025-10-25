@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { createTeam, getFragments, verifyPassword, resolveTeamName } from "./api";
+import { createTeam, getFragments, verifyPassword, resolveTeamName, getLeaderboard } from "./api";
 import LeaderboardRedirect from "./components/LeaderboardRedirect";
 import LeaderboardPage from "./pages/LeaderboardPage";
 
@@ -129,41 +129,17 @@ export default function App() {
 		);
 	}
 
+	// inside App component
+
 	async function fetchLeaderboard() {
-		// indicate loading: setLeaderboard(null) is already used in your UI as "loading"
 		setLeaderboard(null);
 		setMessage(null);
-
 		try {
-			// Use VITE_API_URL if configured (e.g. "http://localhost:4000"), otherwise call proxied /api path.
-			const API_BASE = (import.meta as any).env?.VITE_API_URL ?? "";
-			const url = API_BASE ? `${API_BASE}/api/leaderboard` : "/api/leaderboard";
-
-			const res = await fetch(url, {
-				method: "GET",
-				headers: { "Accept": "application/json" }
-			});
-
-			// If backend returned an error HTML (or other non-JSON), read text to surface helpful message.
-			if (!res.ok) {
-				const txt = await res.text();
-				throw new Error(txt || `Leaderboard request failed: ${res.status}`);
-			}
-
-			// parse JSON (this will succeed only if the response is JSON)
-			const data = await res.json();
-
-			// basic validation: expect an array
-			if (!Array.isArray(data)) {
-				throw new Error("Unexpected leaderboard response (not an array)");
-			}
-
+			const data = await getLeaderboard();
 			setLeaderboard(data);
 		} catch (err: any) {
 			console.error("fetchLeaderboard error:", err);
-			// show a user friendly message
 			setMessage(err?.message ? `Error loading leaderboard: ${err.message}` : "Error loading leaderboard");
-			// setLeaderboard to empty array so UI shows "no rows" instead of staying null
 			setLeaderboard([]);
 		}
 	}

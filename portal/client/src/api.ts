@@ -42,16 +42,8 @@ export async function resolveTeamName(name: string) {
 	return res.json();
 }
 
-//export async function getLeaderboard() {
-//	const res = await fetch(`${API_BASE}/api/leaderboard`);
-//	if (!res.ok) {
-//		const txt = await res.text();
-//		throw new Error(txt || `leaderboard fetch failed: ${res.status}`);
-//	}
-//	return res.json();
-//}
 export async function getLeaderboard() {
-	const res = await fetch(`/api/leaderboard`);
+	const res = await fetch(`${API_BASE}/api/leaderboard`);
 	if (!res.ok) {
 		const txt = await res.text();
 		throw new Error(txt || `leaderboard fetch failed: ${res.status}`);
