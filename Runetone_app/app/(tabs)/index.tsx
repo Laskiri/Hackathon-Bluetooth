@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, FlatList, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { API_BASE } from '@/constants/api';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 import { ThemedText } from '@/components/themed-text';
@@ -22,13 +23,42 @@ export default function DetectionScreen() {
   const textSecondary = useThemeColor({}, 'textSecondary');
   const [pulseAnim] = useState(() => new Animated.Value(1));
   const prevCountRef = useRef(0);
+  const [team, setTeam] = useState<any | null>(null);
+  const teamRetryRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // auto-start scanning on mount
-    startScanning();
-    return () => stopScanning();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Poll /api/teams/latest until a team object is returned.
+    let mounted = true;
+
+    async function fetchLatest() {
+      try {
+        const res = await fetch(`${API_BASE.replace(/\/$/, '')}/api/teams/latest`);
+        if (!mounted) return;
+        if (res.ok) {
+          const json = await res.json();
+          // assume server returns null when no active team, or an object when present
+          if (json && Object.keys(json).length > 0) {
+            setTeam(json);
+            return;
+          }
+        }
+      } catch (err) {
+        // ignore network errors while polling
+        if (__DEV__) console.debug('[DetectionScreen] fetchLatest error', err);
+      }
+      // retry in 5s
+      if (!mounted) return;
+      teamRetryRef.current = (setTimeout(fetchLatest, 5000) as unknown) as number;
+    }
+
+    fetchLatest();
+
+    return () => {
+      mounted = false;
+      if (teamRetryRef.current != null) clearTimeout(teamRetryRef.current as any);
+    };
   }, []);
+
 
   useEffect(() => {
     const prev = prevCountRef.current;
@@ -53,7 +83,27 @@ export default function DetectionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allArtifactsDetected]);
 
+  // start scanning only after we have a team
+  useEffect(() => {
+    if (team) {
+      startScanning();
+      return () => stopScanning();
+    }
+    // if no team yet, ensure scanning stopped
+    stopScanning();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [team]);
+
   const progress = Math.round((detectedArtifacts.length / ARTIFACTS.length) * 100);
+
+  // If no active team yet, show a simple message and don't render the detection UI
+  if (!team) {
+    return (
+      <ThemedView style={[styles.container, styles.centered]}>
+        <ThemedText>No Museum experience initiated, head to the reception to start one</ThemedText>
+      </ThemedView>
+    );
+  }
 
   const renderItem = ({ item }: { item: Artifact }) => {
     const found = detectedArtifacts.some(d => d.id === item.id);
@@ -91,7 +141,7 @@ export default function DetectionScreen() {
   return (
     <ThemedView style={styles.container}>
       <Animated.View style={[styles.header, { transform: [{ scale: pulseAnim }] }]}>
-        {QUIZ_DATA.runestoneName ? <ThemedText type="defaultSemiBold">{QUIZ_DATA.runestoneName}</ThemedText> : null}
+        {QUIZ_DATA.runestoneName ? <ThemedText type="defaultSemiBold">{QUIZ_DATA.runestoneName + " " + team.name}</ThemedText> : null}
         <ThemedText type="title">Artifact Detection</ThemedText>
         <ThemedText>{progress}% found</ThemedText>
       </Animated.View>
@@ -141,4 +191,5 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12 },
   cta: { padding: 10, borderRadius: 8 },
   error: { marginVertical: 8 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
