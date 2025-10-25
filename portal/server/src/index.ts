@@ -43,11 +43,6 @@ app.get("/api/teams/resolve", async (req, res) => {
 			const t = matches[0];
 			return res.json({ id: t.id, name: t.name });
 		}
-		// multiple matches (rare because createTeam ensures uniqueness for generated names)
-		return res.json({
-			multiple: true,
-			teams: matches.map((t) => ({ id: t.id, name: t.name }))
-		});
 	} catch (err) {
 		console.error("GET /api/teams/resolve error:", err);
 		return res.status(500).json({ error: "internal server error" });
