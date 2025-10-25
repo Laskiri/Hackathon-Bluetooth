@@ -8,6 +8,7 @@ type ScannedDevice = {
   name?: string | null;
   rssi?: number | null;
   serviceUUIDs?: string[] | null;
+  localName?: string | null;
 };
 
 type UseBleScannerReturn = {
@@ -114,6 +115,7 @@ export default function useBleScanner(): UseBleScannerReturn {
           const entry: ScannedDevice = {
             id: scannedDevice.id,
             name: scannedDevice.name ?? (scannedDevice.localName as string | undefined) ?? null,
+            localName: (scannedDevice.localName as string | undefined) ?? (scannedDevice.name as string | undefined) ?? null,
             rssi: (scannedDevice.rssi as number) ?? null,
             serviceUUIDs: (scannedDevice.serviceUUIDs as string[] | null) ?? null,
           };
@@ -121,18 +123,19 @@ export default function useBleScanner(): UseBleScannerReturn {
           return [...prev, entry];
         });
 
-        // Check device service UUIDs for artifact matches
-        const serviceUUIDs = (scannedDevice.serviceUUIDs || []) as string[];
-
-        ARTIFACTS.forEach(artifact => {
-          if (serviceUUIDs.find(u => u?.toLowerCase() === artifact.serviceUUID.toLowerCase())) {
-            setDetectedArtifacts(prev => {
-              const exists = prev.find(p => p.id === artifact.id);
-              if (exists) return prev;
-              return [...prev, { ...artifact, detected: true }];
-            });
-          }
-        });
+        // Use device local name (advertised localName) to match artifacts by ble_local_name
+        const deviceLocalName = (scannedDevice.localName ?? scannedDevice.name ?? '').toString().trim();
+        if (deviceLocalName) {
+          ARTIFACTS.forEach(artifact => {
+            if (deviceLocalName.toLowerCase() === artifact.ble_local_name.toLowerCase()) {
+              setDetectedArtifacts(prev => {
+                const exists = prev.find(p => p.id === artifact.id);
+                if (exists) return prev;
+                return [...prev, { ...artifact, detected: true }];
+              });
+            }
+          });
+        }
       });
       return;
     } catch (e: any) {
@@ -164,11 +167,17 @@ export default function useBleScanner(): UseBleScannerReturn {
             if (exists) return prev;
             return [...prev, { ...artifact, detected: true }];
           });
-          // also add a simulated nearby device entry for testing
+          // also add a simulated nearby device entry for testing (match by local name)
           setScannedDevices(prev => {
             const id = `sim-${artifact.id}`;
             const exists = prev.find(p => p.id === id);
-            const entry: ScannedDevice = { id, name: `${artifact.name} (sim)`, rssi: -50 - idx * 5, serviceUUIDs: [artifact.serviceUUID] };
+            const entry: ScannedDevice = {
+              id,
+              name: `${artifact.name} (sim)`,
+              localName: artifact.ble_local_name,
+              rssi: -50 - idx * 5,
+              serviceUUIDs: null,
+            };
             if (exists) return prev.map(d => (d.id === id ? { ...d, ...entry } : d));
             return [...prev, entry];
           });
