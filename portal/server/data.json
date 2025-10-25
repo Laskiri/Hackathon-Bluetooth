@@ -1,0 +1,75 @@
+{
+  "teams": {
+    "ee423a1c-a5d5-4e90-b979-ae44b0ac6aaf": {
+      "id": "ee423a1c-a5d5-4e90-b979-ae44b0ac6aaf",
+      "code": "XK3JZE",
+      "password": "Harald Bluetooth is Alive",
+      "fragments": [
+        "Harald Bl",
+        "uetooth ",
+        "is Alive"
+      ],
+      "createdAt": "2025-10-25T08:21:37.696Z",
+      "solved": true
+    },
+    "7aa882d6-c985-41f3-9f2f-30162f2b7e49": {
+      "id": "7aa882d6-c985-41f3-9f2f-30162f2b7e49",
+      "code": "JJCZ2X",
+      "password": "harald is alive",
+      "fragments": [
+        "harald i",
+        "s alive"
+      ],
+      "createdAt": "2025-10-25T08:22:39.219Z",
+      "solved": true
+    },
+    "bc730c46-6612-476d-9984-cec1519d938c": {
+      "id": "bc730c46-6612-476d-9984-cec1519d938c",
+      "code": "8NL0Q4",
+      "password": "secret",
+      "fragments": [
+        "se",
+        "cr",
+        "et"
+      ],
+      "createdAt": "2025-10-25T08:29:44.721Z",
+      "solved": false
+    },
+    "05aea3fb-427a-42d4-a78f-0be4375ed2d3": {
+      "id": "05aea3fb-427a-42d4-a78f-0be4375ed2d3",
+      "code": "QKVVP2",
+      "password": "secret",
+      "fragments": [
+        "se",
+        "cr",
+        "et"
+      ],
+      "createdAt": "2025-10-25T08:44:51.476Z",
+      "solved": false
+    },
+    "a8bd56e2-86a0-4c1f-b760-345856c7d6aa": {
+      "id": "a8bd56e2-86a0-4c1f-b760-345856c7d6aa",
+      "code": "T9T6DQ",
+      "password": "secret",
+      "fragments": [
+        "se",
+        "cr",
+        "et"
+      ],
+      "createdAt": "2025-10-25T08:44:52.815Z",
+      "solved": false
+    },
+    "56b7e808-8358-40a5-b949-15749ca462b1": {
+      "id": "56b7e808-8358-40a5-b949-15749ca462b1",
+      "code": "2DN95O",
+      "password": "secret",
+      "fragments": [
+        "se",
+        "cr",
+        "et"
+      ],
+      "createdAt": "2025-10-25T08:44:53.791Z",
+      "solved": false
+    }
+  }
+}
