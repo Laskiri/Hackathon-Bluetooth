@@ -4,11 +4,18 @@ import { randomUUID } from "crypto";
 
 const DB_PATH = path.join(process.cwd(), "data.json");
 
+export type Fragment = {
+	pass_fragment: string;
+	solved: boolean;
+	solvedAt: string;
+	score?: number;
+};
+
 export type Team = {
 	id: string;
 	name: string;
 	password: string;
-	fragments: string[];
+	fragments: Record<string, Fragment>;
 	createdAt: string;
 	solved?: boolean;
 };
@@ -68,7 +75,11 @@ async function withRead<T>(fn: (db: DBSchema) => Promise<T>): Promise<T> {
 	return fn(db);
 }
 
-function splitIntoFragments(password: string, count: number): string[] {
+/**
+ * Split string password into an array of substring fragments while preferring whole-word splits.
+ * This returns an array of fragment strings (not Fragment objects).
+ */
+function splitPassword(password: string, count: number): string[] {
 	if (count <= 1) return [password];
 
 	const words = password.trim().split(/\s+/).filter(Boolean);
@@ -90,6 +101,7 @@ function splitIntoFragments(password: string, count: number): string[] {
 
 	if (words.length === 0) return Array(count).fill("");
 
+	// If we have >= count words, distribute whole words among fragments as evenly as possible.
 	if (words.length >= count) {
 		const out: string[] = [];
 		const base = Math.floor(words.length / count);
@@ -107,8 +119,33 @@ function splitIntoFragments(password: string, count: number): string[] {
 		return out;
 	}
 
+	// Fewer words than fragments: fall back to character-balanced split of the joined words.
 	const joined = words.join(" ");
 	return charSplit(joined, count);
+}
+
+/**
+ * Convert string fragments into Fragment objects and return an object keyed by "0".."n-1".
+ */
+function splitIntoFragments(password: string, count: number): Record<string, Fragment> {
+	const pass_fragments: string[] = splitPassword(password, count);
+
+	const fragmentsObj: Record<string, Fragment> = {};
+	for (let i = 0; i < pass_fragments.length; i++) {
+		fragmentsObj[String(i)] = {
+			pass_fragment: pass_fragments[i],
+			solved: false,
+			solvedAt: "", // empty until solved
+		};
+	}
+	for (let i = pass_fragments.length; i < count; i++) {
+		fragmentsObj[String(i)] = {
+			pass_fragment: "",
+			solved: false,
+			solvedAt: "",
+		};
+	}
+	return fragmentsObj;
 }
 
 function makeVikingName() {
@@ -174,6 +211,51 @@ export async function getLatestTeam(): Promise<Team | null> {
 	return latest;
 }
 
+export async function completeRunestone(teamId: string, fragmentId: string | number): Promise<{ ok: boolean; message?: string; team?: Team; fragment?: Fragment }> {
+	return withWrite(async (db) => {
+		const team = db.teams[teamId];
+		if (!team) return { ok: false, message: "Team not found" };
+
+		const key = String(fragmentId);
+		if (!team.fragments || !(key in team.fragments)) return { ok: false, message: "Fragment not found" };
+
+		const frag = team.fragments[key];
+		if (frag.solved) return { ok: false, message: "Fragment already solved", fragment: frag, team };
+
+		// mark solved
+		const nowIso = new Date().toISOString();
+		frag.solved = true;
+		frag.solvedAt = nowIso;
+
+		// compute minutes between team.createdAt and solvedAt
+		function minutesBetween(startIso?: string, endIso?: string): number {
+			if (!startIso || !endIso) return 0;
+			const s = new Date(startIso);
+			const e = new Date(endIso);
+			if (isNaN(s.getTime()) || isNaN(e.getTime())) return 0;
+			const mins = Math.floor((e.getTime() - s.getTime()) / 60000);
+			return Math.max(0, mins);
+		}
+
+		const minutes = minutesBetween(team.createdAt, frag.solvedAt);
+
+		// scoring formula: 100 - 2 * minutes, clamp to integer in [0,100]
+		let score = Math.round(100 - 2 * minutes);
+		if (!Number.isFinite(score)) score = 0;
+		if (score < 0) score = 0;
+		if (score > 100) score = 100;
+
+		frag.score = score;
+
+		// if all fragments solved, mark team solved
+		const allSolved = Object.values(team.fragments).every((f) => f.solved === true);
+		if (allSolved) team.solved = true;
+
+		return { ok: true, team, fragment: frag };
+	});
+}
+
+
 export async function verifyTeamPassword(teamId: string, supplied: string): Promise<{ ok: boolean; message?: string }> {
 	return withWrite(async (db) => {
 		const team = db.teams[teamId];
@@ -188,7 +270,7 @@ export async function verifyTeamPassword(teamId: string, supplied: string): Prom
 	});
 }
 
-export async function getFragments(teamId: string): Promise<string[] | null> {
+export async function getFragments(teamId: string): Promise<Record<string, Fragment> | null> {
 	const team = await getTeam(teamId);
 	return team ? team.fragments : null;
 }
@@ -201,5 +283,5 @@ export async function findTeamsByName(name: string): Promise<Team[]> {
 	const q = name.trim().toLowerCase();
 	if (!q) return [];
 	const db = await ensureDb();
-	return Object.values(db.teams ?? {}).filter((t) => (t.name ?? "").toLowerCase() === q); db
+	return Object.values(db.teams ?? {}).filter((t) => (t.name ?? "").toLowerCase() === q);
 }

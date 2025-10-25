@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { createTeam, getFragments, verifyPassword, resolveTeamName } from "./api";
 
+type FragmentShape = {
+	pass_fragment: string;
+	solved: boolean;
+	solvedAt: string;
+	score?: number;
+	// idx is optional on the client side; fragments are keyed by index in the object
+};
+
 export default function App() {
 	const [teamId, setTeamId] = useState("");
 	const [teamName, setTeamName] = useState("");
@@ -9,7 +17,7 @@ export default function App() {
 	const [celebrate, setCelebrate] = useState(false);
 	const [showAdmin, setShowAdmin] = useState(false);
 	const [created, setCreated] = useState<any>(null);
-	const [fragmentsData, setFragmentsData] = useState<string[] | null>(null);
+	const [fragmentsData, setFragmentsData] = useState<Record<string, FragmentShape> | null>(null);
 
 	// Admin create team
 	async function handleCreateTeam(e: React.FormEvent) {
@@ -22,7 +30,7 @@ export default function App() {
 		setCreated(res);
 		setTeamId(res.teamId);
 		setTeamName(res.name);
-		setFragmentsData(res.fragments);
+		setFragmentsData(res.fragments ?? null);
 	}
 
 	async function handleGetFragments() {
@@ -31,8 +39,11 @@ export default function App() {
 			return;
 		}
 		const res = await getFragments(teamId);
-		if (res?.fragments) setFragmentsData(res.fragments);
-		else setMessage("Could not fetch fragments.");
+		if (res?.fragments) {
+			setFragmentsData(res.fragments);
+		} else {
+			setMessage("Could not fetch fragments.");
+		}
 	}
 
 	async function handleSubmit(e: React.FormEvent) {
@@ -77,6 +88,30 @@ export default function App() {
 		} else {
 			setMessage(res.message ?? "Incorrect");
 		}
+	}
+
+	// helper to render fragments object in index order
+	function renderFragmentsObject(fragObj: Record<string, FragmentShape> | null, fragmentUrls?: string[]) {
+		if (!fragObj) return null;
+		const keys = Object.keys(fragObj).sort((a, b) => Number(a) - Number(b));
+		return (
+			<>
+				{keys.map((k) => {
+					const f = fragObj[k];
+					const idx = Number(k);
+					return (
+						<div key={k} className="fragment-box">
+							<div className="small">Fragment {idx} — UI or device can fetch:</div>
+							{/* fragmentUrls is an array from server, indexed by numeric order */}
+							{fragmentUrls && fragmentUrls[idx] && <div className="small">{fragmentUrls[idx]}</div>}
+							<div style={{ marginTop: 6 }}><strong>Value:</strong> {f?.pass_fragment}</div>
+							{typeof f?.score === "number" && <div className="small">Score: {f.score}</div>}
+							{f?.solved && <div className="small">Solved at: {f.solvedAt}</div>}
+						</div>
+					);
+				})}
+			</>
+		);
 	}
 
 	return (
@@ -144,14 +179,7 @@ export default function App() {
 									<div><strong>Team Name: </strong> <div className="fragment-box">{created.name}</div></div>
 									<div><strong>Summoning Rite:</strong> <div className="fragment-box">{created.password}</div></div>
 									<div style={{ marginTop: 8 }}>
-										<strong>Fragments</strong>
-										{created.fragments.map((f: string, idx: number) => (
-											<div key={idx} className="fragment-box">
-												<div className="small">Fragment {idx} — UI or device can fetch:</div>
-												<div className="small">{created.fragmentUrls[idx]}</div>
-												<div style={{ marginTop: 6 }}><strong>Value:</strong> {f}</div>
-											</div>
-										))}
+										{renderFragmentsObject(created.fragments, created.fragmentUrls)}
 									</div>
 								</div>
 							)}
@@ -173,7 +201,7 @@ export default function App() {
 								{fragmentsData && (
 									<div style={{ marginTop: 8 }}>
 										<h4>Fragments</h4>
-										{fragmentsData.map((f, i) => <div key={i} className="fragment-box">#{i}: {f}</div>)}
+										{renderFragmentsObject(fragmentsData)}
 									</div>
 								)}
 							</div>

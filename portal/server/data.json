@@ -1,40 +1,213 @@
 {
   "teams": {
-    "e9586e2d-3611-4b41-ab00-365cc1eb492a": {
-      "id": "e9586e2d-3611-4b41-ab00-365cc1eb492a",
-      "name": "Harald",
-      "password": "harald is alive",
-      "fragments": [
-        "haral",
-        "d is ",
-        "alive"
-      ],
-      "createdAt": "2025-10-25T14:10:28.140Z",
+    "9fd54163-f213-4a54-b447-78221d0dcf47": {
+      "id": "9fd54163-f213-4a54-b447-78221d0dcf47",
+      "name": "Testers",
+      "password": "123password",
+      "fragments": {
+        "0": {
+          "pass_fragment": "123pas",
+          "solved": true,
+          "solvedAt": "2025-10-25T18:08:36.621Z",
+          "idx": 0,
+          "score": 100
+        },
+        "1": {
+          "pass_fragment": "sword",
+          "solved": true,
+          "solvedAt": "2025-10-25T18:46:07.263Z",
+          "idx": 1,
+          "score": 1
+        }
+      },
+      "createdAt": "2025-10-25T18:06:19.755Z",
+      "solved": true
+    },
+    "592f5730-4f74-470a-937e-1c2186df768b": {
+      "id": "592f5730-4f74-470a-937e-1c2186df768b",
+      "name": "testers-2",
+      "password": "qwerty",
+      "fragments": {
+        "0": {
+          "pass_fragment": "qwe",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 0
+        },
+        "1": {
+          "pass_fragment": "rty",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 1
+        }
+      },
+      "createdAt": "2025-10-25T18:47:56.488Z",
       "solved": false
     },
-    "0884bc8b-7872-474e-a846-12064fa0e035": {
-      "id": "0884bc8b-7872-474e-a846-12064fa0e035",
-      "name": "We are cool",
-      "password": "Harald Bluetooth is Alive",
-      "fragments": [
-        "Harald Bl",
-        "uetooth ",
-        "is Alive"
-      ],
-      "createdAt": "2025-10-25T14:26:49.411Z",
+    "2cfdeebe-8c18-4540-814a-1a5391bc3761": {
+      "id": "2cfdeebe-8c18-4540-814a-1a5391bc3761",
+      "name": "teste",
+      "password": "123",
+      "fragments": {
+        "0": {
+          "pass_fragment": "12",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 0
+        },
+        "1": {
+          "pass_fragment": "3",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 1
+        }
+      },
+      "createdAt": "2025-10-25T18:48:24.104Z",
       "solved": false
     },
-    "6222bf0c-74a1-41e4-a8d2-73ebc7710054": {
-      "id": "6222bf0c-74a1-41e4-a8d2-73ebc7710054",
-      "name": "test",
-      "password": "Harald Bluetooth is Alive",
-      "fragments": [
-        "Harald Bl",
-        "uetooth ",
-        "is Alive"
-      ],
-      "createdAt": "2025-10-25T14:31:12.341Z",
+    "df50e3f8-ee18-48b3-b288-b3ae512e54ab": {
+      "id": "df50e3f8-ee18-48b3-b288-b3ae512e54ab",
+      "name": "magnus",
+      "password": "magnus",
+      "fragments": {
+        "0": {
+          "pass_fragment": "ma",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 0
+        },
+        "1": {
+          "pass_fragment": "gn",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 1
+        },
+        "2": {
+          "pass_fragment": "us",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 2
+        }
+      },
+      "createdAt": "2025-10-25T18:53:14.141Z",
       "solved": false
+    },
+    "0e3ad85e-4845-4c96-9802-c301529dddff": {
+      "id": "0e3ad85e-4845-4c96-9802-c301529dddff",
+      "name": "magnus-2",
+      "password": "magnus",
+      "fragments": {
+        "0": {
+          "pass_fragment": "ma",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 0
+        },
+        "1": {
+          "pass_fragment": "gn",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 1
+        },
+        "2": {
+          "pass_fragment": "us",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 2
+        }
+      },
+      "createdAt": "2025-10-25T18:53:16.093Z",
+      "solved": false
+    },
+    "c1683367-429f-4e1c-ad7f-48e5daf539bd": {
+      "id": "c1683367-429f-4e1c-ad7f-48e5daf539bd",
+      "name": "magnus2",
+      "password": "magnus is king",
+      "fragments": {
+        "0": {
+          "pass_fragment": "magnus",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 0
+        },
+        "1": {
+          "pass_fragment": "is",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 1
+        },
+        "2": {
+          "pass_fragment": "king",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 2
+        }
+      },
+      "createdAt": "2025-10-25T18:53:26.052Z",
+      "solved": false
+    },
+    "5e1cc7e5-387a-495d-ab3f-79fe334e0120": {
+      "id": "5e1cc7e5-387a-495d-ab3f-79fe334e0120",
+      "name": "mag",
+      "password": "nus",
+      "fragments": {
+        "0": {
+          "pass_fragment": "nu",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 0
+        },
+        "1": {
+          "pass_fragment": "s",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 1
+        }
+      },
+      "createdAt": "2025-10-25T18:59:19.170Z",
+      "solved": false
+    },
+    "5f3d43ce-73d5-49e2-b2ba-258b397df880": {
+      "id": "5f3d43ce-73d5-49e2-b2ba-258b397df880",
+      "name": "mag-2",
+      "password": "nus",
+      "fragments": {
+        "0": {
+          "pass_fragment": "nu",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 0
+        },
+        "1": {
+          "pass_fragment": "s",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 1
+        }
+      },
+      "createdAt": "2025-10-25T18:59:36.846Z",
+      "solved": false
+    },
+    "74dcee29-4ec1-4874-858a-96f0897b8b64": {
+      "id": "74dcee29-4ec1-4874-858a-96f0897b8b64",
+      "name": "mag-3",
+      "password": "nus",
+      "fragments": {
+        "0": {
+          "pass_fragment": "nu",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 0
+        },
+        "1": {
+          "pass_fragment": "s",
+          "solved": false,
+          "solvedAt": "",
+          "idx": 1
+        }
+      },
+      "createdAt": "2025-10-25T19:02:27.744Z",
+      "solved": true
     }
   }
 }

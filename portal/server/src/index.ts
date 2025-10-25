@@ -1,6 +1,14 @@
 import express from "express";
 import cors from "cors";
-import { createTeam, getTeam, getFragments, verifyTeamPassword, getLatestTeam, findTeamsByName } from "./db.js";
+import {
+	createTeam,
+	getTeam,
+	getFragments,
+	verifyTeamPassword,
+	getLatestTeam,
+	findTeamsByName,
+	completeRunestone
+} from "./db.js";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 const HOST = process.env.HOST ?? `http://localhost:${PORT}`;
@@ -15,9 +23,9 @@ app.post("/api/admin/teams", async (req, res) => {
 	const fragmentsCount = typeof fragments === "number" && fragments >= 1 ? fragments : 2;
 	const pass = typeof password === "string" && password.length > 0 ? password : generateRandomPassword(8);
 	try {
-		const team = await createTeam(pass, fragmentsCount, typeof name === "string" && name.trim().length > 0 ? name.trim() : undefined)
+		const team = await createTeam(pass, fragmentsCount, typeof name === "string" && name.trim().length > 0 ? name.trim() : undefined);
 		const baseUrl = HOST;
-		const fragmentUrls = team.fragments.map((_, idx) => `${baseUrl}/api/teams/${team.id}/fragments/${idx}`);
+		const fragmentUrls = Object.keys(team.fragments).map((k) => `${baseUrl}/api/teams/${team.id}/fragments/${k}`);
 		res.json({
 			teamId: team.id,
 			name: team.name,
@@ -43,11 +51,17 @@ app.get("/api/teams/resolve", async (req, res) => {
 			const t = matches[0];
 			return res.json({ id: t.id, name: t.name });
 		}
+		// multiple matches (rare)
+		return res.json({
+			multiple: true,
+			teams: matches.map((t) => ({ id: t.id, name: t.name }))
+		});
 	} catch (err) {
 		console.error("GET /api/teams/resolve error:", err);
 		return res.status(500).json({ error: "internal server error" });
 	}
 });
+
 // Get basic info about a team (no password)
 app.get("/api/teams/:teamId", async (req, res) => {
 	const team = await getTeam(req.params.teamId);
@@ -59,7 +73,6 @@ app.get("/api/teams/:teamId", async (req, res) => {
 		solved: team.solved
 	});
 });
-
 
 app.get("/api/getLatestTeam", async (req, res) => {
 	try {
@@ -89,11 +102,24 @@ app.get("/api/teams/:teamId/fragments", async (req, res) => {
 app.get("/api/teams/:teamId/fragments/:index", async (req, res) => {
 	const fr = await getFragments(req.params.teamId);
 	if (fr == null) return res.status(404).json({ error: "not found" });
-	const idx = Number(req.params.index);
-	if (Number.isNaN(idx) || idx < 0 || idx >= fr.length) {
+	const idx = String(req.params.index);
+	if (!(idx in fr)) {
 		return res.status(400).json({ error: "invalid fragment index" });
 	}
 	res.json({ index: idx, fragment: fr[idx] });
+});
+
+// Mark a runestone fragment as completed
+app.post("/api/teams/:teamId/runestone/:runestoneId", async (req, res) => {
+	const { teamId, runestoneId } = req.params;
+	try {
+		const update = await completeRunestone(teamId, runestoneId);
+		if (!update.ok) return res.status(400).json({ success: false, message: update.message });
+		return res.json({ success: true, fragment: update.fragment, team: { id: update.team!.id, solved: update.team!.solved } });
+	} catch (err) {
+		console.error("POST /api/teams/:teamId/runestone/:runestoneId error:", err);
+		return res.status(500).json({ error: "internal server error" });
+	}
 });
 
 // Verify password
