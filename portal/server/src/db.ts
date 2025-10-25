@@ -70,17 +70,45 @@ async function withRead<T>(fn: (db: DBSchema) => Promise<T>): Promise<T> {
 
 function splitIntoFragments(password: string, count: number): string[] {
 	if (count <= 1) return [password];
-	const len = password.length;
-	const base = Math.floor(len / count);
-	const rem = len % count;
-	const out: string[] = [];
-	let i = 0;
-	for (let k = 0; k < count; k++) {
-		const take = base + (k < rem ? 1 : 0);
-		out.push(password.substr(i, take));
-		i += take;
+
+	const words = password.trim().split(/\s+/).filter(Boolean);
+
+	function charSplit(s: string, n: number): string[] {
+		const out: string[] = [];
+		const len = s.length;
+		if (len === 0) return Array(n).fill("");
+		const base = Math.floor(len / n);
+		const rem = len % n;
+		let i = 0;
+		for (let k = 0; k < n; k++) {
+			const take = base + (k < rem ? 1 : 0);
+			out.push(s.substr(i, take));
+			i += take;
+		}
+		return out;
 	}
-	return out;
+
+	if (words.length === 0) return Array(count).fill("");
+
+	if (words.length >= count) {
+		const out: string[] = [];
+		const base = Math.floor(words.length / count);
+		const rem = words.length % count; // first `rem` groups get one extra word
+		let idx = 0;
+		for (let k = 0; k < count; k++) {
+			const take = k < rem ? base + 1 : base;
+			if (take === 0) {
+				out.push("");
+			} else {
+				out.push(words.slice(idx, idx + take).join(" "));
+				idx += take;
+			}
+		}
+		return out;
+	}
+
+	const joined = words.join(" ");
+	return charSplit(joined, count);
 }
 
 function makeVikingName() {
