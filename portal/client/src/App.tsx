@@ -81,7 +81,7 @@ export default function App() {
 
 	return (
 		<div className="container">
-			<h1>The summoning of Harald Bluetooth — Submit Password</h1>
+			<h1>Summon Harald Bluetooth</h1>
 
 			{!celebrate ? (
 				<>
@@ -100,11 +100,11 @@ export default function App() {
 						</div>
 
 						<div style={{ marginTop: 8 }}>
-							<label className="small">Assembled password</label><br />
-							<input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Type assembled password" style={{ width: "100%" }} />
+							<label className="small">Summoning Rite</label><br />
+							<input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Type assembled summoning rite" style={{ width: "100%" }} />
 						</div>
 						<div style={{ marginTop: 12 }}>
-							<button type="submit">Submit</button>
+							<button type="submit">Bring to life</button>
 						</div>
 					</form>
 
@@ -125,8 +125,8 @@ export default function App() {
 									<input name="name" placeholder="e.g. Harald (optional)" style={{ width: "100%" }} />
 								</div>
 								<div style={{ marginTop: 8 }}>
-									<label className="small">Password (optional, leave blank to auto-generate)</label><br />
-									<input name="password" placeholder="e.g. SECRET123" style={{ width: "100%" }} />
+									<label className="small">Summoning Rite (optional, leave blank to auto-generate)</label><br />
+									<input name="password" placeholder="e.g. Gorm the Old of Denmark" style={{ width: "100%" }} />
 								</div>
 								<div style={{ marginTop: 8 }}>
 									<label className="small">Fragments</label><br />
@@ -142,7 +142,7 @@ export default function App() {
 									<h3>Created</h3>
 									<div><strong>Team ID:</strong> <div className="fragment-box">{created.teamId}</div></div>
 									<div><strong>Team Name: </strong> <div className="fragment-box">{created.name}</div></div>
-									<div><strong>Password:</strong> <div className="fragment-box">{created.password}</div></div>
+									<div><strong>Summoning Rite:</strong> <div className="fragment-box">{created.password}</div></div>
 									<div style={{ marginTop: 8 }}>
 										<strong>Fragments</strong>
 										{created.fragments.map((f: string, idx: number) => (
