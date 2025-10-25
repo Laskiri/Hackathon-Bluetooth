@@ -95,7 +95,7 @@ app.get("/api/health", async (req, res) => {
 	return res.json({ message: "ok" });
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
 	console.log(`Server running on ${HOST}`);
 });
 

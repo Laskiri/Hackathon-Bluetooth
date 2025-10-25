@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { Platform, PermissionsAndroid } from 'react-native';
-import ARTIFACTS, { Artifact } from '@/constants/artifacts';
+import { ARTIFACTS, Artifact } from '@/constants/artifacts';
+
+type ScannedDevice = {
+  id: string;
+  name?: string | null;
+  rssi?: number | null;
+  serviceUUIDs?: string[] | null;
+  localName?: string | null;
+};
 
 type UseBleScannerReturn = {
   detectedArtifacts: Artifact[];
+  scannedDevices: ScannedDevice[];
   isScanning: boolean;
   hasPermission: boolean;
   error: string | null;
@@ -16,10 +25,14 @@ type UseBleScannerReturn = {
 export default function useBleScanner(): UseBleScannerReturn {
   const managerRef = useRef<BleManager | null>(null);
   const [detectedArtifacts, setDetectedArtifacts] = useState<Artifact[]>([]);
+  const [scannedDevices, setScannedDevices] = useState<ScannedDevice[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean>(Platform.OS !== 'android');
   const [error, setError] = useState<string | null>(null);
   const [nativeAvailable, setNativeAvailable] = useState<boolean>(true);
+
+  const simulationIntervalRef = useRef<number | null>(null);
+  const simulationIndexRef = useRef<number>(0);
 
   async function requestBluetoothPermissions(): Promise<boolean> {
     if (Platform.OS !== 'android') return true;
@@ -28,14 +41,21 @@ export default function useBleScanner(): UseBleScannerReturn {
       const permissionsToRequest: any[] = [];
       const scan = PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN;
       const connect = PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT;
+      const fineLocation = PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
 
+      // Request BLE-specific permissions (Android 12+) and fine location (older Androids / fallback)
       if (scan) permissionsToRequest.push(scan);
       if (connect) permissionsToRequest.push(connect);
+      if (fineLocation) permissionsToRequest.push(fineLocation);
 
-      const granted = await PermissionsAndroid.requestMultiple(permissionsToRequest);
+      const granted = await PermissionsAndroid.requestMultiple(permissionsToRequest as any);
 
       const allGranted = Object.values(granted).every(v => v === PermissionsAndroid.RESULTS.GRANTED);
       setHasPermission(allGranted);
+      if (__DEV__) {
+        // helpful debug output when developing
+        console.debug('[useBleScanner] requested permissions ->', granted, 'allGranted=', allGranted);
+      }
       return allGranted;
     } catch (err: any) {
       setError(err?.message ?? String(err));
@@ -46,8 +66,8 @@ export default function useBleScanner(): UseBleScannerReturn {
 
   async function startScanning() {
     setError(null);
+    // lazy init
     if (!managerRef.current) {
-      // try to initialize BleManager lazily and guard against missing native module
       if (Platform.OS === 'web') {
         setError('Bluetooth LE is not supported on web in this build.');
         setNativeAvailable(false);
@@ -76,45 +96,115 @@ export default function useBleScanner(): UseBleScannerReturn {
 
       setIsScanning(true);
 
+      if (__DEV__) {
+        console.debug('[useBleScanner] startScanning called, nativeAvailable=', nativeAvailable, 'hasPermission=', hasPermission);
+      }
+
       managerRef.current.startDeviceScan(null, null, (err: any, scannedDevice: Device | null) => {
         if (err) {
-          setError(err.message ?? String(err));
+          setError(err?.message ?? String(err));
           setIsScanning(false);
           return;
         }
 
         if (!scannedDevice) return;
 
-        // Check device service UUIDs for artifact matches
-        const serviceUUIDs = (scannedDevice.serviceUUIDs || []) as string[];
-
-        ARTIFACTS.forEach(artifact => {
-          if (serviceUUIDs.find(u => u?.toLowerCase() === artifact.serviceUUID.toLowerCase())) {
-            setDetectedArtifacts(prev => {
-              const exists = prev.find(p => p.id === artifact.id);
-              if (exists) return prev;
-              return [...prev, { ...artifact, detected: true }];
-            });
-          }
+        // upsert scanned device
+        setScannedDevices(prev => {
+          const exists = prev.find(d => d.id === scannedDevice.id);
+          const entry: ScannedDevice = {
+            id: scannedDevice.id,
+            name: scannedDevice.name ?? (scannedDevice.localName as string | undefined) ?? null,
+            localName: (scannedDevice.localName as string | undefined) ?? (scannedDevice.name as string | undefined) ?? null,
+            rssi: (scannedDevice.rssi as number) ?? null,
+            serviceUUIDs: (scannedDevice.serviceUUIDs as string[] | null) ?? null,
+          };
+          if (exists) return prev.map(d => (d.id === entry.id ? { ...d, ...entry } : d));
+          return [...prev, entry];
         });
+
+        // Use device local name (advertised localName) to match artifacts by ble_local_name
+        const deviceLocalName = (scannedDevice.localName ?? scannedDevice.name ?? '').toString().trim();
+        if (deviceLocalName) {
+          ARTIFACTS.forEach(artifact => {
+            if (deviceLocalName.toLowerCase() === artifact.ble_local_name.toLowerCase()) {
+              setDetectedArtifacts(prev => {
+                const exists = prev.find(p => p.id === artifact.id);
+                if (exists) return prev;
+                return [...prev, { ...artifact, detected: true }];
+              });
+            }
+          });
+        }
       });
+      return;
     } catch (e: any) {
       setError(e?.message ?? String(e));
       setIsScanning(false);
+    }
+
+    // If native module isn't available, provide a dev-mode simulation so the UI can be tested in Expo Go
+    if (!nativeAvailable) {
+      if (__DEV__) {
+        setIsScanning(true);
+        // reset simulation state
+        simulationIndexRef.current = 0;
+        setDetectedArtifacts([]);
+        setScannedDevices([]);
+        simulationIntervalRef.current = setInterval(() => {
+          const idx = simulationIndexRef.current;
+          if (idx >= ARTIFACTS.length) {
+            if (simulationIntervalRef.current != null) {
+              clearInterval(simulationIntervalRef.current as any);
+              simulationIntervalRef.current = null;
+            }
+            setIsScanning(false);
+            return;
+          }
+          const artifact = ARTIFACTS[idx];
+          setDetectedArtifacts(prev => {
+            const exists = prev.find(p => p.id === artifact.id);
+            if (exists) return prev;
+            return [...prev, { ...artifact, detected: true }];
+          });
+          // also add a simulated nearby device entry for testing (match by local name)
+          setScannedDevices(prev => {
+            const id = `sim-${artifact.id}`;
+            const exists = prev.find(p => p.id === id);
+            const entry: ScannedDevice = {
+              id,
+              name: `${artifact.name} (sim)`,
+              localName: artifact.ble_local_name,
+              rssi: -50 - idx * 5,
+              serviceUUIDs: null,
+            };
+            if (exists) return prev.map(d => (d.id === id ? { ...d, ...entry } : d));
+            return [...prev, entry];
+          });
+          simulationIndexRef.current = idx + 1;
+        }, 1500) as unknown as number;
+      } else {
+        setError('Native BLE module not available in this build.');
+      }
     }
   }
 
   function stopScanning() {
     try {
       managerRef.current?.stopDeviceScan();
-    } catch (e: any) {
+    } catch {
       // ignore
+    }
+    // clear any simulation timer
+    if (simulationIntervalRef.current != null) {
+      clearInterval(simulationIntervalRef.current as any);
+      simulationIntervalRef.current = null;
     }
     setIsScanning(false);
   }
 
   useEffect(() => {
-    // Initialize BleManager once on mount if platform seems supported. Wrap in try/catch
+    // Initialize manager if possible
     if (Platform.OS === 'web') {
       setNativeAvailable(false);
       setError('Bluetooth LE is not supported on web in this build.');
@@ -125,11 +215,8 @@ export default function useBleScanner(): UseBleScannerReturn {
       managerRef.current = new BleManager();
       setNativeAvailable(true);
     } catch {
-      // Typical when running inside Expo Go without native BLE module
       setNativeAvailable(false);
-      setError(
-        'Native BLE module not available. Use an Expo dev client or prebuilt app that includes react-native-ble-plx.'
-      );
+      setError('Native BLE module not available. Use an Expo dev client or prebuilt app that includes react-native-ble-plx.');
     }
 
     return () => {
@@ -141,9 +228,13 @@ export default function useBleScanner(): UseBleScannerReturn {
       } catch {
         // ignore
       }
+      // clear simulation timer on unmount
+      if (simulationIntervalRef.current != null) {
+        clearInterval(simulationIntervalRef.current as any);
+        simulationIntervalRef.current = null;
+      }
       managerRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const allArtifactsDetected = ARTIFACTS.every(a => detectedArtifacts.some(d => d.id === a.id));
@@ -151,12 +242,15 @@ export default function useBleScanner(): UseBleScannerReturn {
   // If native module is missing, provide a helpful error in the returned state
   useEffect(() => {
     if (!nativeAvailable && !error) {
-      setError('Native BLE module not available in this build.');
+        setError(
+            `Native BLE module not available in this build. nativeAvailable=${nativeAvailable} error=${error ? 'present' : 'none'}`
+        );
     }
   }, [nativeAvailable, error]);
 
   return {
     detectedArtifacts,
+    scannedDevices,
     isScanning,
     hasPermission,
     error,

@@ -1,0 +1,1 @@
+export const API_BASE = __DEV__ ? 'http://192.168.243.7:4000' : 'https://your-production.example';

@@ -5,6 +5,7 @@ export interface Answer {
 
 export interface Question {
   id: string;
+  artifactId?: string;
   question: string;
   answers: Answer[];
   correctAnswerId: string;
@@ -13,13 +14,16 @@ export interface Question {
 export interface QuizData {
   questions: Question[];
   runestoneCode: string;
+  runestoneName?: string;
 }
 
 export const QUIZ_DATA: QuizData = {
-  runestoneCode: 'ᚦᚢᚱ',
+  runestoneCode: 'Harald',
+  runestoneName: 'Elder Runestone',
   questions: [
     {
       id: 'q1',
+      artifactId: 'artifact-1',
       question: 'Which material was commonly used to make Viking swords?',
       answers: [
         { id: 'a1', text: 'Bronze' },
@@ -30,6 +34,7 @@ export const QUIZ_DATA: QuizData = {
     },
     {
       id: 'q2',
+      artifactId: 'artifact-3',
       question: 'Runestones were primarily used to:',
       answers: [
         { id: 'a1', text: 'Record important events or memorials' },
@@ -40,6 +45,7 @@ export const QUIZ_DATA: QuizData = {
     },
     {
       id: 'q3',
+      artifactId: 'artifact-4',
       question: 'Which of these items is commonly found as a grave good in Viking burials?',
       answers: [
         { id: 'a1', text: 'Smartphone' },

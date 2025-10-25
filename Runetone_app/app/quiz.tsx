@@ -5,7 +5,9 @@ import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { QUIZ_DATA } from '@/constants/quiz';
+import { ARTIFACTS } from '@/constants/artifacts';
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -15,29 +17,56 @@ export default function QuizScreen() {
   const scale = useRef(new Animated.Value(1)).current;
 
   const question = QUIZ_DATA.questions[index];
+  const correctColor = useThemeColor({}, 'correctAnswer');
+  const incorrectColor = useThemeColor({}, 'incorrectAnswer');
+  const selectedColor = useThemeColor({}, 'selectedAnswer');
+  const cardBackground = useThemeColor({}, 'cardBackground');
 
   useEffect(() => {
     Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
   }, [index, scale]);
 
-  function onSelectAnswer(answerId: string) {
-    setSelected(answerId);
-    Haptics.selectionAsync();
-  }
+  const [wrongAnswers, setWrongAnswers] = useState<Set<string>>(() => new Set<string>());
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  function onNext() {
-  if (!selected) return;
-  if (selected === question.correctAnswerId) setScore(s => s + 1);
-    setSelected(null);
-    if (index + 1 >= QUIZ_DATA.questions.length) {
+  async function onSelectAnswer(answerId: string) {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    setSelected(answerId);
+
+    const correct = answerId === question.correctAnswerId;
+    if (correct) {
+      setIsCorrect(true);
+      setScore(s => s + 1);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.push('./result');
+      // visual feedback then auto-advance
+      setTimeout(() => {
+        setIsCorrect(null);
+        setSelected(null);
+        setWrongAnswers(new Set<string>());
+        setIsProcessing(false);
+        if (index + 1 >= QUIZ_DATA.questions.length) {
+          router.push('./result');
+        } else {
+          setIndex(i => i + 1);
+          Animated.sequence([
+            Animated.timing(scale, { toValue: 1.05, duration: 120, useNativeDriver: true }),
+            Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true }),
+          ]).start();
+        }
+      }, 1500);
     } else {
-      setIndex(i => i + 1);
-      Animated.sequence([
-        Animated.timing(scale, { toValue: 1.05, duration: 120, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true }),
-      ]).start();
+      // incorrect: mark and allow retry
+      setWrongAnswers(prev => {
+        const next = new Set(prev);
+        next.add(answerId);
+        return next;
+      });
+      setIsCorrect(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      // allow immediate retry
+      setIsProcessing(false);
     }
   }
 
@@ -46,6 +75,9 @@ export default function QuizScreen() {
       <Animated.View style={{ transform: [{ scale }] }}>
         <ThemedText type="title">Quiz</ThemedText>
         <ThemedText>{`Question ${index + 1} of ${QUIZ_DATA.questions.length}`}</ThemedText>
+        {question.artifactId ? (
+          <ThemedText>{ARTIFACTS.find(a => a.id === question.artifactId)?.name ?? ''}</ThemedText>
+        ) : null}
         <ThemedText>{`Score: ${score}`}</ThemedText>
       </Animated.View>
 
@@ -54,22 +86,29 @@ export default function QuizScreen() {
         <FlatList
           data={question.answers}
           keyExtractor={a => a.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.answerRow, selected === item.id && styles.answerSelected]}
-              onPress={() => onSelectAnswer(item.id)}
-            >
-              <ThemedText>{item.text}</ThemedText>
-            </TouchableOpacity>
-          )}
+          renderItem={({ item }) => {
+            const isSelected = selected === item.id;
+            const isWrong = wrongAnswers.has(item.id);
+            const backgroundColor = isWrong
+              ? incorrectColor
+              : isSelected && isCorrect === true
+              ? correctColor
+              : isSelected && isCorrect === null
+              ? selectedColor
+              : cardBackground;
+            return (
+              <TouchableOpacity
+                style={[styles.answerRow, { backgroundColor }]}
+                onPress={() => onSelectAnswer(item.id)}
+              >
+                <ThemedText>{item.text}</ThemedText>
+              </TouchableOpacity>
+            );
+          }}
         />
       </View>
 
-      <View style={styles.controls}>
-        <TouchableOpacity style={styles.nextButton} onPress={onNext}>
-          <ThemedText type="defaultSemiBold">{index + 1 >= QUIZ_DATA.questions.length ? 'Finish' : 'Next'}</ThemedText>
-        </TouchableOpacity>
-      </View>
+      {/* controls removed — progression is automatic on correct answers */}
     </ThemedView>
   );
 }
@@ -77,8 +116,6 @@ export default function QuizScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   questionBox: { marginTop: 16 },
-  answerRow: { padding: 12, borderRadius: 8, marginVertical: 6, backgroundColor: 'transparent' },
-  answerSelected: { backgroundColor: '#E6F4FE' },
+  answerRow: { padding: 12, borderRadius: 8, marginVertical: 6 },
   controls: { marginTop: 20, alignItems: 'center' },
-  nextButton: { padding: 10, borderRadius: 8, backgroundColor: '#1D3D47' },
 });
