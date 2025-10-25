@@ -31,18 +31,6 @@ app.post("/api/admin/teams", async (req, res) => {
 	}
 });
 
-// Get basic info about a team (no password)
-app.get("/api/teams/:teamId", async (req, res) => {
-	const team = await getTeam(req.params.teamId);
-	if (!team) return res.status(404).json({ error: "not found" });
-	res.json({
-		id: team.id,
-		name: team.name,
-		createdAt: team.createdAt,
-		solved: team.solved
-	});
-});
-
 // Resolve friendly team name to team id(s)
 app.get("/api/teams/resolve", async (req, res) => {
 	const raw = String(req.query.name ?? "").trim();
@@ -65,6 +53,18 @@ app.get("/api/teams/resolve", async (req, res) => {
 		return res.status(500).json({ error: "internal server error" });
 	}
 });
+// Get basic info about a team (no password)
+app.get("/api/teams/:teamId", async (req, res) => {
+	const team = await getTeam(req.params.teamId);
+	if (!team) return res.status(404).json({ error: "not found" });
+	res.json({
+		id: team.id,
+		name: team.name,
+		createdAt: team.createdAt,
+		solved: team.solved
+	});
+});
+
 
 app.get("/api/getLatestTeam", async (req, res) => {
 	try {
