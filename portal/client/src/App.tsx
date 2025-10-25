@@ -130,7 +130,7 @@ export default function App() {
 								</div>
 								<div style={{ marginTop: 8 }}>
 									<label className="small">Fragments</label><br />
-									<input name="fragments" defaultValue="3" style={{ width: "100px" }} />
+									<input name="fragments" defaultValue="2" style={{ width: "100px" }} />
 								</div>
 								<div style={{ marginTop: 8 }}>
 									<button type="submit">Create Team</button>

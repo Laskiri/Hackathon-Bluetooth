@@ -12,7 +12,7 @@ app.use(express.json());
 // Admin: create a new team
 app.post("/api/admin/teams", async (req, res) => {
 	const { password, fragments, name } = req.body ?? {};
-	const fragmentsCount = typeof fragments === "number" && fragments >= 1 ? fragments : 3;
+	const fragmentsCount = typeof fragments === "number" && fragments >= 1 ? fragments : 2;
 	const pass = typeof password === "string" && password.length > 0 ? password : generateRandomPassword(8);
 	try {
 		const team = await createTeam(pass, fragmentsCount, typeof name === "string" && name.trim().length > 0 ? name.trim() : undefined)
