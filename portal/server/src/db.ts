@@ -6,7 +6,6 @@ const DB_PATH = path.join(process.cwd(), "data.json");
 
 export type Team = {
 	id: string;
-	code: string;
 	name: string;
 	password: string;
 	fragments: string[];
@@ -52,10 +51,6 @@ async function withWrite<T>(fn: (db: DBSchema) => Promise<T>): Promise<T> {
 	return writeLock;
 }
 
-function makeCode(): string {
-	// 6-character alphanumeric code
-	return Math.random().toString(36).substr(2, 6).toUpperCase();
-}
 
 function splitIntoFragments(password: string, count: number): string[] {
 	if (count <= 1) return [password];
@@ -72,18 +67,16 @@ function splitIntoFragments(password: string, count: number): string[] {
 	return out;
 }
 
-let vikingNames = ["a", "b"];
 
 function makeVikingName() {
+	let vikingNames = ["Harald", "Gorm"];
 	let idx = Math.floor(Math.random() * vikingNames.length);
 	return vikingNames[idx]
 }
 
-
-export async function createTeam(password: string, fragmentsCount = 3): Promise<Team> {
+export async function createTeam(password: string, fragmentsCount = 2): Promise<Team> {
 	const team: Team = {
 		id: randomUUID(),
-		code: makeCode(),
 		name: makeVikingName(),
 		password,
 		fragments: splitIntoFragments(password, fragmentsCount),

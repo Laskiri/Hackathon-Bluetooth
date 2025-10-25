@@ -15,6 +15,7 @@ app.post("/api/admin/teams", async (req, res) => {
 	const fragmentsCount = typeof fragments === "number" && fragments >= 1 ? fragments : 3;
 	const pass = typeof password === "string" && password.length > 0 ? password : generateRandomPassword(8);
 	try {
+		//broadcast to runestones, uuid and fragment of code.
 		const team = await createTeam(pass, fragmentsCount);
 		const baseUrl = HOST;
 		const fragmentUrls = team.fragments.map((_, idx) => `${baseUrl}/api/teams/${team.id}/fragments/${idx}`);
@@ -45,6 +46,12 @@ app.get("/api/teams/:teamId", async (req, res) => {
 	});
 });
 
+app.get("/api/teams/latest", async (req, res) => {
+
+
+
+
+});
 // Return all fragments (admin/debug)
 app.get("/api/teams/:teamId/fragments", async (req, res) => {
 	const fr = await getFragments(req.params.teamId);
