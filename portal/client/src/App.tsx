@@ -1,16 +1,15 @@
 import React, { useState } from "react";
-import { createTeam, getFragments, verifyPassword } from "./api";
+import { createTeam, getFragments, verifyPassword, resolveTeamName } from "./api";
 
 export default function App() {
-	const [teamCode, setTeamCode] = useState("");
 	const [teamId, setTeamId] = useState("");
+	const [teamName, setTeamName] = useState("");
 	const [password, setPassword] = useState("");
 	const [message, setMessage] = useState<string | null>(null);
 	const [celebrate, setCelebrate] = useState(false);
 	const [showAdmin, setShowAdmin] = useState(false);
 	const [created, setCreated] = useState<any>(null);
 	const [fragmentsData, setFragmentsData] = useState<string[] | null>(null);
-	const [name, setTeamName] = useState("");
 
 	// Admin create team
 	async function handleCreateTeam(e: React.FormEvent) {
@@ -18,11 +17,11 @@ export default function App() {
 		const form = new FormData(e.target as HTMLFormElement);
 		const password = (form.get("password") as string) || undefined;
 		const frag = Number((form.get("fragments") as string) || "3");
-		const res = await createTeam(password, frag);
+		const name = (form.get("name") as string) || undefined;
+		const res = await createTeam(password, frag, name);
 		setCreated(res);
 		setTeamId(res.teamId);
 		setTeamName(res.name);
-		setTeamCode(res.code);
 		setFragmentsData(res.fragments);
 	}
 
@@ -38,13 +37,40 @@ export default function App() {
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		// If user provided a team code (human-facing), we don't have a mapping from code to id.
-		// For simplicity, require teamId. In your event, give teams the teamId (or we can improve later).
-		if (!teamId) {
-			setMessage("Please enter Team ID (admin provides) or create a team in Admin.");
+		setMessage(null);
+
+		let idToUse = "";
+
+		// If an explicit admin-provided teamId is set (e.g., from admin UI), prefer it.
+		if (teamId) {
+			idToUse = teamId;
+		} else if (!teamName) {
+			setMessage("Please enter team name (or paste team ID) or create a team in Admin.");
 			return;
+		} else {
+			// Try to resolve the friendly name
+			try {
+				const resolved = await resolveTeamName(teamName);
+				if (!resolved) {
+					setMessage("Team not found");
+					return;
+				}
+				if ("multiple" in resolved && resolved.multiple) {
+					const first = resolved.teams[0];
+					setMessage(`Multiple teams found with that name — using first match: ${first.name}`);
+					idToUse = first.id;
+				} else {
+					idToUse = resolved.id;
+				}
+			} catch (err: any) {
+				console.error("resolveTeamName error:", err);
+				setMessage("Failed to resolve team name");
+				return;
+			}
 		}
-		const res = await verifyPassword(teamId, password);
+
+		// Submit password
+		const res = await verifyPassword(idToUse, password);
 		if (res.success) {
 			setCelebrate(true);
 			setMessage(null);
@@ -55,15 +81,24 @@ export default function App() {
 
 	return (
 		<div className="container">
-			<h1>Scavenger Hunt — Submit Password</h1>
+			<h1>The summoning of Harald Bluetooth — Submit Password</h1>
 
 			{!celebrate ? (
 				<>
 					<form onSubmit={handleSubmit}>
 						<div>
-							<label className="small">Team ID (provided by admin)</label><br />
-							<input value={teamId} onChange={(e) => setTeamId(e.target.value)} placeholder="team id (UUID)" style={{ width: "100%" }} />
+							<label className="small">Team name (or paste Team ID)</label><br />
+							<input
+								value={teamName}
+								onChange={(e) => setTeamName(e.target.value)}
+								placeholder="e.g. Harald or paste UUID"
+								style={{ width: "100%" }}
+							/>
+							<div className="small" style={{ marginTop: 6, color: "#666" }}>
+								If you were given a UUID by admin, paste it in the Admin field below (or paste here).
+							</div>
 						</div>
+
 						<div style={{ marginTop: 8 }}>
 							<label className="small">Assembled password</label><br />
 							<input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Type assembled password" style={{ width: "100%" }} />
@@ -86,6 +121,10 @@ export default function App() {
 							<h2>Admin - Create Team</h2>
 							<form onSubmit={handleCreateTeam}>
 								<div>
+									<label className="small">Team name (optional)</label><br />
+									<input name="name" placeholder="e.g. Harald (optional)" style={{ width: "100%" }} />
+								</div>
+								<div style={{ marginTop: 8 }}>
 									<label className="small">Password (optional, leave blank to auto-generate)</label><br />
 									<input name="password" placeholder="e.g. SECRET123" style={{ width: "100%" }} />
 								</div>
@@ -102,7 +141,7 @@ export default function App() {
 								<div style={{ marginTop: 12 }}>
 									<h3>Created</h3>
 									<div><strong>Team ID:</strong> <div className="fragment-box">{created.teamId}</div></div>
-									<div><strong>Team code (human):</strong> <div className="fragment-box">{created.code}</div></div>
+									<div><strong>Team Name: </strong> <div className="fragment-box">{created.name}</div></div>
 									<div><strong>Password:</strong> <div className="fragment-box">{created.password}</div></div>
 									<div style={{ marginTop: 8 }}>
 										<strong>Fragments</strong>
@@ -120,7 +159,13 @@ export default function App() {
 							<div style={{ marginTop: 12 }}>
 								<h3>Other admin actions</h3>
 								<div>
-									<input placeholder="Team ID to fetch fragments" onChange={(e) => setTeamId(e.target.value)} value={teamId} style={{ width: "100%" }} />
+									{/* Admin-only field to paste a raw team ID (UUID) to fetch fragments */}
+									<input
+										placeholder="Team ID to fetch fragments"
+										onChange={(e) => setTeamId(e.target.value)}
+										value={teamId}
+										style={{ width: "100%" }}
+									/>
 								</div>
 								<div style={{ marginTop: 8 }}>
 									<button onClick={handleGetFragments}>Fetch Fragments</button>
@@ -146,7 +191,7 @@ function Celebrate() {
 	return (
 		<div>
 			<h2>🎉 Congratulations!</h2>
-			<p className="small">You solved the scavenger hunt password. Enjoy the celebration!</p>
+			<p className="small">Congratulations, you have brought Harald Bluetooth back to life. Praise the King of Denmark!</p>
 			<div style={{ marginTop: 20 }}>
 				<img src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" alt="celebrate" style={{ maxWidth: "100%" }} />
 			</div>
