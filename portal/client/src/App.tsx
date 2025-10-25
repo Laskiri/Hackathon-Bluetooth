@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { createTeam, getFragments, verifyPassword, resolveTeamName, getLeaderboard } from "./api";
 import LeaderboardRedirect from "./components/LeaderboardRedirect";
 import LeaderboardPage from "./pages/LeaderboardPage";
@@ -273,18 +273,116 @@ export default function App() {
 	);
 };
 
+//function Celebrate() {
+//	return (
+//		<div>
+//			<h2>🎉 Congratulations!</h2>
+//			<p className="small">Congratulations, you have brought Harald Bluetooth back to life. Praise the King of Denmark!</p>
+//			<div style={{ marginTop: 20 }}>
+//				<img src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" alt="celebrate" style={{ maxWidth: "100%" }} />
+//			</div>
+//		</div>
+//	);
+//}
+
 function Celebrate() {
+	const videoRef = useRef<HTMLVideoElement | null>(null);
+	const [isMutedFallback, setIsMutedFallback] = useState<boolean>(false);
+	const [userUnmuted, setUserUnmuted] = useState<boolean>(false);
+
+	useEffect(() => {
+		const v = videoRef.current;
+		if (!v) return;
+
+		// Start with volume up (1.0)
+		v.volume = 1.0;
+		v.muted = false;
+
+		// Try to autoplay with sound. If blocked, fall back to muted autoplay.
+		const tryPlay = async () => {
+			try {
+				await v.play();
+				// played successfully with sound
+				setIsMutedFallback(v.muted);
+			} catch (err) {
+				// autoplay with sound blocked — mute then autoplay
+				try {
+					v.muted = true;
+					await v.play();
+					setIsMutedFallback(true);
+				} catch (err2) {
+					// If even muted autoplay fails, nothing else to do
+					console.warn("Autoplay failed even when muted:", err2);
+				}
+			}
+		};
+
+		tryPlay();
+
+		// Cleanup not strictly necessary for video element but keep safe
+		return () => {
+			// pause when unmounted
+			try { v.pause(); } catch (e) { /* ignore */ }
+		};
+	}, []);
+
+	function handleUnmute() {
+		const v = videoRef.current;
+		if (!v) return;
+		v.muted = false;
+		v.volume = 1.0;
+		// try to resume playback (some browsers require a user gesture to unmute)
+		v.play().catch((e) => {
+			console.warn("Failed to play after unmute:", e);
+		});
+		setUserUnmuted(true);
+		setIsMutedFallback(false);
+	}
+
 	return (
 		<div>
 			<h2>🎉 Congratulations!</h2>
 			<p className="small">Congratulations, you have brought Harald Bluetooth back to life. Praise the King of Denmark!</p>
-			<div style={{ marginTop: 20 }}>
-				<img src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" alt="celebrate" style={{ maxWidth: "100%" }} />
+
+			<div style={{ marginTop: 20, position: "relative" }}>
+				<video
+					ref={videoRef}
+					src="/media/celebrate.mp4"
+					style={{ maxWidth: "100%", display: "block", borderRadius: 8 }}
+					autoPlay
+					playsInline
+					loop
+				// no controls shown by default; user can unmute with the button we provide
+				/>
+
+				{/* Show an Unmute button if autoplay fell back to muted and user hasn't unmuted */}
+				{(isMutedFallback && !userUnmuted) && (
+					<div style={{
+						position: "absolute",
+						right: 12,
+						bottom: 12,
+						display: "flex",
+						gap: 8
+					}}>
+						<button
+							onClick={handleUnmute}
+							style={{
+								padding: "8px 10px",
+								borderRadius: 6,
+								border: "1px solid rgba(0,0,0,0.1)",
+								background: "#fff",
+								cursor: "pointer",
+								boxShadow: "0 2px 6px rgba(0,0,0,0.12)"
+							}}
+						>
+							🔊 Unmute
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);
 }
-
 
 //
 //
