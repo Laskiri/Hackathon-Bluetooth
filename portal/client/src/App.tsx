@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { createTeam, getFragments, verifyPassword, resolveTeamName } from "./api";
+import LeaderboardRedirect from "./components/LeaderboardRedirect";
+
 
 type FragmentShape = {
 	pass_fragment: string;
@@ -7,6 +9,14 @@ type FragmentShape = {
 	solvedAt: string;
 	score?: number;
 	// idx is optional on the client side; fragments are keyed by index in the object
+};
+
+type LeaderboardEntry = {
+	id: string;
+	name: string;
+	createdAt: string;
+	solved: boolean;
+	score: number;
 };
 
 export default function App() {
@@ -18,6 +28,10 @@ export default function App() {
 	const [showAdmin, setShowAdmin] = useState(false);
 	const [created, setCreated] = useState<any>(null);
 	const [fragmentsData, setFragmentsData] = useState<Record<string, FragmentShape> | null>(null);
+
+
+	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null);
+	const [showLeaderboard, setShowLeaderboard] = useState(false);
 
 	// Admin create team
 	async function handleCreateTeam(e: React.FormEvent) {
@@ -118,6 +132,15 @@ export default function App() {
 		<div className="container">
 			<h1>Summon Harald Bluetooth</h1>
 
+			<div style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center" }}>
+				<button onClick={() => {
+					const show = !showLeaderboard;
+					setShowLeaderboard(show);
+					if (show && !leaderboard) fetchLeaderboard();
+				}}>
+					{showLeaderboard ? "Hide Leaderboard" : "Show Leaderboard"}
+				</button>
+			</div>
 			{!celebrate ? (
 				<>
 					<form onSubmit={handleSubmit}>
@@ -226,3 +249,19 @@ function Celebrate() {
 		</div>
 	);
 }
+
+
+//
+//
+//
+//async function fetchLeaderboard() {
+//	try {
+//		const data = await getLeaderboard();
+//		// data is an array of entries
+//		setLeaderboard(data ?? []);
+//	} catch (err: any) {
+//		console.error("Failed to fetch leaderboard:", err);
+//		setMessage("Failed to fetch leaderboard");
+//	}
+//}
+//
