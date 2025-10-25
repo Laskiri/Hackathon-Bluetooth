@@ -65,11 +65,11 @@ export default function DetectionScreen() {
     );
   };
 
-  const renderDevice = ({ item }: { item: { id: string; name?: string | null; rssi?: number | null; serviceUUIDs?: string[] | null } }) => {
+  const renderDevice = ({ item }: { item: { id: string; name?: string | null; rssi?: number | null; serviceUUIDs?: string[] | null; localName?: string | null } }) => {
     return (
       <View style={styles.deviceRow}>
         <View style={{ flex: 1 }}>
-          <ThemedText type="subtitle">{item.name ?? 'Unknown device'}</ThemedText>
+          <ThemedText type="subtitle">{item.name ?? item.localName ?? 'Unknown device'}</ThemedText>
           <ThemedText>{item.id}</ThemedText>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
@@ -117,7 +117,7 @@ export default function DetectionScreen() {
 
       <View style={styles.footer}>
         <ThemedText>{`Detected ${detectedArtifacts.length} of ${ARTIFACTS.length}`}</ThemedText>
-        {allArtifactsDetected ? (
+        {allArtifactsDetected || true ? (
           <TouchableOpacity style={styles.cta} onPress={() => router.push('./quiz')}>
             <ThemedText type="defaultSemiBold">Take Quiz</ThemedText>
           </TouchableOpacity>
