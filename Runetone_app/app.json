@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Runetone_app",
-    "slug": "Runetone_app",
+    "slug": "runestoneapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,13 +19,25 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.Runetone_app"
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "./app.plugin.js",
+        {
+          "isBackgroundEnabled": true,
+          "modes": [
+            "peripheral",
+            "central"
+          ],
+          "bluetoothAlwaysPermission": "Allow runestoneapp to connect to bluetooth devices"
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -43,6 +55,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ea847d99-3a83-4e7e-82b1-f60eb68788a4"
+      }
+    },
+    "owner": "laskiri"
   }
 }

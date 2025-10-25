@@ -10,7 +10,7 @@ import { ARTIFACTS, Artifact } from '@/constants/artifacts';
 
 export default function DetectionScreen() {
   const router = useRouter();
-  const { detectedArtifacts, isScanning, startScanning, stopScanning, allArtifactsDetected, error } = useBleScanner();
+  const { detectedArtifacts, scannedDevices, isScanning, startScanning, stopScanning, allArtifactsDetected, error } = useBleScanner();
   const [pulseAnim] = useState(() => new Animated.Value(1));
   const prevCountRef = useRef(0);
 
@@ -65,6 +65,20 @@ export default function DetectionScreen() {
     );
   };
 
+  const renderDevice = ({ item }: { item: { id: string; name?: string | null; rssi?: number | null; serviceUUIDs?: string[] | null } }) => {
+    return (
+      <View style={styles.deviceRow}>
+        <View style={{ flex: 1 }}>
+          <ThemedText type="subtitle">{item.name ?? 'Unknown device'}</ThemedText>
+          <ThemedText>{item.id}</ThemedText>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <ThemedText>{item.rssi ? `${item.rssi} dBm` : ''}</ThemedText>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
       <Animated.View style={[styles.header, { transform: [{ scale: pulseAnim }] }]}>
@@ -92,6 +106,15 @@ export default function DetectionScreen() {
         ItemSeparatorComponent={() => <View style={styles.sep} />}
       />
 
+      <ThemedText style={{ marginTop: 12 }} type="subtitle">Nearby Devices</ThemedText>
+      <FlatList
+        data={scannedDevices}
+        keyExtractor={d => d.id}
+        renderItem={renderDevice}
+        contentContainerStyle={{ paddingVertical: 8 }}
+        ItemSeparatorComponent={() => <View style={styles.sep} />}
+      />
+
       <View style={styles.footer}>
         <ThemedText>{`Detected ${detectedArtifacts.length} of ${ARTIFACTS.length}`}</ThemedText>
         {allArtifactsDetected ? (
@@ -111,6 +134,7 @@ const styles = StyleSheet.create({
   artifactRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8, backgroundColor: 'transparent' },
   artifactInfo: { flex: 1 },
   statusContainer: { width: 90, alignItems: 'flex-end' },
+  deviceRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8 },
   sep: { height: 8 },
   controls: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   button: { padding: 10, borderRadius: 8, backgroundColor: '#E6F4FE' },
