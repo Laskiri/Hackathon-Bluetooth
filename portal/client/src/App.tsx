@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createTeam, getFragments, verifyPassword, resolveTeamName } from "./api";
 import LeaderboardRedirect from "./components/LeaderboardRedirect";
+import LeaderboardPage from "./pages/LeaderboardPage";
 
 
 type FragmentShape = {
@@ -128,24 +129,69 @@ export default function App() {
 		);
 	}
 
+	async function fetchLeaderboard() {
+		// indicate loading: setLeaderboard(null) is already used in your UI as "loading"
+		setLeaderboard(null);
+		setMessage(null);
+
+		try {
+			// Use VITE_API_URL if configured (e.g. "http://localhost:4000"), otherwise call proxied /api path.
+			const API_BASE = (import.meta as any).env?.VITE_API_URL ?? "";
+			const url = API_BASE ? `${API_BASE}/api/leaderboard` : "/api/leaderboard";
+
+			const res = await fetch(url, {
+				method: "GET",
+				headers: { "Accept": "application/json" }
+			});
+
+			// If backend returned an error HTML (or other non-JSON), read text to surface helpful message.
+			if (!res.ok) {
+				const txt = await res.text();
+				throw new Error(txt || `Leaderboard request failed: ${res.status}`);
+			}
+
+			// parse JSON (this will succeed only if the response is JSON)
+			const data = await res.json();
+
+			// basic validation: expect an array
+			if (!Array.isArray(data)) {
+				throw new Error("Unexpected leaderboard response (not an array)");
+			}
+
+			setLeaderboard(data);
+		} catch (err: any) {
+			console.error("fetchLeaderboard error:", err);
+			// show a user friendly message
+			setMessage(err?.message ? `Error loading leaderboard: ${err.message}` : "Error loading leaderboard");
+			// setLeaderboard to empty array so UI shows "no rows" instead of staying null
+			setLeaderboard([]);
+		}
+	}
+
 	return (
 		<div className="container">
 			<h1>Summon Harald Bluetooth</h1>
 
 			<div style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center" }}>
-				<button onClick={() => {
-					const show = !showLeaderboard;
-					setShowLeaderboard(show);
-					if (show && !leaderboard) fetchLeaderboard();
-				}}>
+				<button
+					onClick={() => {
+						const show = !showLeaderboard;
+						setShowLeaderboard(show);
+						if (show && !leaderboard) fetchLeaderboard();
+					}}
+				>
 					{showLeaderboard ? "Hide Leaderboard" : "Show Leaderboard"}
 				</button>
 			</div>
-			{!celebrate ? (
+
+			{showLeaderboard ? (
+				<LeaderboardPage />
+			) : !celebrate ? (
 				<>
 					<form onSubmit={handleSubmit}>
 						<div>
-							<label className="small">Team name (or paste Team ID)</label><br />
+							<label className="small">Team name (or paste Team ID)</label>
+							<br />
 							<input
 								value={teamName}
 								onChange={(e) => setTeamName(e.target.value)}
@@ -158,8 +204,14 @@ export default function App() {
 						</div>
 
 						<div style={{ marginTop: 8 }}>
-							<label className="small">Summoning Rite</label><br />
-							<input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Type assembled summoning rite" style={{ width: "100%" }} />
+							<label className="small">Summoning Rite</label>
+							<br />
+							<input
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								placeholder="Type assembled summoning rite"
+								style={{ width: "100%" }}
+							/>
 						</div>
 						<div style={{ marginTop: 12 }}>
 							<button type="submit">Bring to life</button>
@@ -169,7 +221,7 @@ export default function App() {
 					{message && <p className={message.includes("Incorrect") ? "error" : "success"}>{message}</p>}
 
 					<div style={{ marginTop: 18 }}>
-						<button className="admin-toggle" onClick={() => setShowAdmin(s => !s)}>
+						<button className="admin-toggle" onClick={() => setShowAdmin((s) => !s)}>
 							{showAdmin ? "Hide Admin" : "Show Admin"}
 						</button>
 					</div>
@@ -179,15 +231,18 @@ export default function App() {
 							<h2>Admin - Create Team</h2>
 							<form onSubmit={handleCreateTeam}>
 								<div>
-									<label className="small">Team name (optional)</label><br />
+									<label className="small">Team name (optional)</label>
+									<br />
 									<input name="name" placeholder="e.g. Harald (optional)" style={{ width: "100%" }} />
 								</div>
 								<div style={{ marginTop: 8 }}>
-									<label className="small">Summoning Rite (optional, leave blank to auto-generate)</label><br />
+									<label className="small">Summoning Rite (optional, leave blank to auto-generate)</label>
+									<br />
 									<input name="password" placeholder="e.g. Gorm the Old of Denmark" style={{ width: "100%" }} />
 								</div>
 								<div style={{ marginTop: 8 }}>
-									<label className="small">Fragments</label><br />
+									<label className="small">Fragments</label>
+									<br />
 									<input name="fragments" defaultValue="2" style={{ width: "100px" }} />
 								</div>
 								<div style={{ marginTop: 8 }}>
@@ -198,12 +253,16 @@ export default function App() {
 							{created && (
 								<div style={{ marginTop: 12 }}>
 									<h3>Created</h3>
-									<div><strong>Team ID:</strong> <div className="fragment-box">{created.teamId}</div></div>
-									<div><strong>Team Name: </strong> <div className="fragment-box">{created.name}</div></div>
-									<div><strong>Summoning Rite:</strong> <div className="fragment-box">{created.password}</div></div>
-									<div style={{ marginTop: 8 }}>
-										{renderFragmentsObject(created.fragments, created.fragmentUrls)}
+									<div>
+										<strong>Team ID:</strong> <div className="fragment-box">{created.teamId}</div>
 									</div>
+									<div>
+										<strong>Team Name: </strong> <div className="fragment-box">{created.name}</div>
+									</div>
+									<div>
+										<strong>Summoning Rite:</strong> <div className="fragment-box">{created.password}</div>
+									</div>
+									<div style={{ marginTop: 8 }}>{renderFragmentsObject(created.fragments, created.fragmentUrls)}</div>
 								</div>
 							)}
 
@@ -236,7 +295,7 @@ export default function App() {
 			)}
 		</div>
 	);
-}
+};
 
 function Celebrate() {
 	return (
