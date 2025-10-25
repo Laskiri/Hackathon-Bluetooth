@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, TouchableOpacity, View, ImageBackground } from 'react-native';
+import { Animated, StyleSheet, TouchableOpacity, View, ImageBackground, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
@@ -16,6 +16,8 @@ import { useTeam } from '@/context/team';
 export default function ResultScreen() {
   const router = useRouter();
   const scale = useRef(new Animated.Value(0.8)).current;
+  const flashAnim = useRef(new Animated.Value(0)).current;
+  const boxAnim = useRef(new Animated.Value(0)).current; // 0 scrambled or
   const [displayText, setDisplayText] = useState('');
   const codeOpacity = useRef(new Animated.Value(0)).current;
   const { team } = useTeam();
@@ -34,8 +36,6 @@ export default function ResultScreen() {
     }
   }, [team, getFragment]);
   useEffect(() => {
-    // don't run the animation until we actually have a fragment to show
-    // entrance spring
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
 
@@ -45,48 +45,118 @@ export default function ResultScreen() {
     let scrambleTimer: ReturnType<typeof setInterval> | null = null;
     let revealTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    // show scrambling placeholder while 'decoding'
+    // start scrambling
     scrambleTimer = setInterval(() => {
-      // random chars of same length
-      const chars = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚻᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᚫᚪᛡᚣᚤᚥᚦᚮᚭᚯᚰᚱᚳᚴᚵᚶᚷᚸᚹᚺᛞᛟᛞᚪᚫᛝᚴᚱᚲᚷᛇᚣᚤᛗᛟᛞ';
-      const len = Math.max(3, 12);
+      const chars =
+        'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚻᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᚫᚪᛡᚣᚤᚥᚦᚮᚭᚯᚰᚱᚳᚴᚵᚶᚷᚸᚹᚺᛞᛟᛞᚪᚫᛝᚴᚱᚲᚷᛇᚣᚤᛗᛟᛞ';
+      const len = Math.max(3, 18);
       let s = '';
       for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
       setDisplayText(s);
     }, scrambleInterval);
 
-    // when scrambleDuration ends, clear scramble and typewriter reveal
+    // when scrambleDuration ends, clear scramble and run reveal animation
     revealTimeout = setTimeout(() => {
-      if (scrambleTimer) clearInterval(scrambleTimer);
-      setScrambleEnded(true)
-      setDisplayText(codeFragement.fragment)
+      if (scrambleTimer) {
+        clearInterval(scrambleTimer);
+        scrambleTimer = null;
+      }
+
+      const finalText = codeFragement?.fragment?.pass_fragment ?? codeFragement?.code ?? '';
+
+      // flash effect then animate box shape/size, then set text
+      // longer decay and higher peak so the flash is noticeable
+      Animated.sequence([
+        Animated.timing(flashAnim, { toValue: 1, duration: 120, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(flashAnim, { toValue: 0, duration: 600, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      ]).start(() => {
+        setDisplayText(finalText);
+        setScrambleEnded(true);
+        Animated.timing(boxAnim, {
+          toValue: 1,
+          duration: 360,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false, // animating layout (width/height)
+        }).start();
+      });
     }, scrambleDuration);
 
     return () => {
       if (scrambleTimer) clearInterval(scrambleTimer);
       if (revealTimeout) clearTimeout(revealTimeout);
     };
-  }, [scale, codeOpacity, codeFragement]);
-  const cardBackground = useThemeColor({}, 'cardBackground');
+  }, [scale, codeOpacity, codeFragement, flashAnim, boxAnim]);
   const buttonSecondary = useThemeColor({}, 'buttonSecondary');
-  const primary = useThemeColor({}, 'primary');
-  const textSecondary = useThemeColor({}, 'buttonSecondary')
   const bgRune = useThemeColor({}, 'buttonPrimary')
   console.log(displayText)
   return (
     <ThemedView style={styles.container}>
-        <ImageBackground
-          source={require('../assets/images/jellingstone.png')}
-          style={styles.runestoneImage}
-          imageStyle={styles.runestoneImageInner}
+
+      <ImageBackground
+        source={require('../assets/images/jellingstone.png')}
+        style={styles.runestoneImage}
+        imageStyle={styles.runestoneImageInner}
+      >
+        <Animated.View
+          style={{
+            backgroundColor: bgRune,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 20,
+            borderRadius: 12,
+            paddingBottom: 10,
+            width: boxAnim.interpolate({ inputRange: [0, 1], outputRange: [70, 400] }),
+            height: boxAnim.interpolate({ inputRange: [0, 1], outputRange: [400, 70] }),
+            overflow: 'visible',
+          }}
         >
-          <ThemedText style={[styles.code, { color: buttonSecondary, backgroundColor: bgRune, padding: 20, width: 400, height:70, alignSelf: 'center'}, {fontWeight: 900}]}>
+          <ThemedText style={[styles.code, { color: buttonSecondary, textAlign: 'center', fontWeight: '900', lineHeight: 39 }]}>
             {displayText}
           </ThemedText>
-        </ImageBackground>
+          
+        </Animated.View>
+        {scrambleEnded ? (
+          <View
+            style={{
+              position: 'absolute',
+              left: 20,
+              right: 20,
+              bottom: 128,
+              backgroundColor: buttonSecondary,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 4,
+            }}
+          >
+            <ThemedText style={{textAlign: 'center', fontSize: 23 }}>
+              You have successfully retrieved a part of the code — head to the Christianity room next.
+            </ThemedText>
+          </View>
+        ) : null}
+      </ImageBackground>
 
-      <View style={styles.controls}>
-      </View>
+      <View style={styles.controls}></View>
+      {/* flash overlay: placed last so it renders on top, with high zIndex/elevation */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.flashOverlay,
+          {
+            backgroundColor: '#fff',
+            zIndex: 9999,
+            elevation: 9999,
+            opacity: flashAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.95] }),
+          },
+        ]}
+      />
+      
     </ThemedView>
   );
 }
@@ -106,5 +176,13 @@ const styles = StyleSheet.create({
   },
   runestoneImageInner: {
     borderRadius: 60,
-  }
+  },
+  flashOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#fff',
+  },
 });
