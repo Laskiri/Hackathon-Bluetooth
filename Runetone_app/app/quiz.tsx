@@ -38,7 +38,7 @@ export default function QuizScreen() {
     const correct = answerId === question.correctAnswerId;
     if (correct) {
       setIsCorrect(true);
-      setScore(s => s + 1);
+      setScore(s => s + 5);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // visual feedback then auto-advance
       setTimeout(() => {
@@ -63,6 +63,7 @@ export default function QuizScreen() {
         next.add(answerId);
         return next;
       });
+      setScore((prev) => score > 0 ? prev - 1 : 0)
       setIsCorrect(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       // allow immediate retry
