@@ -1,41 +1,28 @@
 {
   "teams": {
-    "b59120e6-dccd-45f2-b522-45f9833706b9": {
-      "id": "b59120e6-dccd-45f2-b522-45f9833706b9",
-      "code": "G2C1LL",
+    "e9586e2d-3611-4b41-ab00-365cc1eb492a": {
+      "id": "e9586e2d-3611-4b41-ab00-365cc1eb492a",
       "name": "Harald",
-      "password": "hjkk",
+      "password": "harald is alive",
       "fragments": [
-        "hj",
-        "k",
-        "k"
+        "haral",
+        "d is ",
+        "alive"
       ],
-      "createdAt": "2025-10-25T10:49:31.081Z",
+      "createdAt": "2025-10-25T14:10:28.140Z",
       "solved": false
     },
-    "e857935a-f6d1-41a7-bc2f-8d6bfd17fb43": {
-      "id": "e857935a-f6d1-41a7-bc2f-8d6bfd17fb43",
-      "code": "U5GWFN",
-      "name": "Harald",
-      "password": "123",
+    "0884bc8b-7872-474e-a846-12064fa0e035": {
+      "id": "0884bc8b-7872-474e-a846-12064fa0e035",
+      "name": "We are cool",
+      "password": "Harald Bluetooth is Alive",
       "fragments": [
-        "1",
-        "2",
-        "3"
+        "Harald Bl",
+        "uetooth ",
+        "is Alive"
       ],
-      "createdAt": "2025-10-25T13:15:24.585Z",
+      "createdAt": "2025-10-25T14:26:49.411Z",
       "solved": false
-    },
-    "1d5e6de6-9c17-485b-82c4-90719e5174d6": {
-      "id": "1d5e6de6-9c17-485b-82c4-90719e5174d6",
-      "code": "PJCM2T",
-      "name": "b",
-      "password": "Harald",
-      "fragments": [
-        "Harald"
-      ],
-      "createdAt": "2025-10-25T13:09:51.923Z",
-      "solved": true
     }
   }
 }

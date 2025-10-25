@@ -92,12 +92,12 @@ function makeVikingName() {
 /**
  * Create a team. Ensures generated friendly names don't collide with existing names by appending -2, -3...
  */
-export async function createTeam(password: string, fragmentsCount = 2): Promise<Team> {
+export async function createTeam(password: string, fragmentsCount = 2, desiredName?: string): Promise<Team> {
 	return withWrite(async (db) => {
 		// collect existing names (lowercased) for quick lookup
 		const existing = new Set(Object.values(db.teams || {}).map((t) => (t.name || "").toLowerCase()));
 
-		let baseName = makeVikingName();
+		let baseName = (typeof desiredName === "string" && desiredName.trim().length > 0) ? desiredName.trim() : makeVikingName();
 		let name = baseName;
 		if (existing.has(name.toLowerCase())) {
 			let i = 2;
@@ -173,5 +173,5 @@ export async function findTeamsByName(name: string): Promise<Team[]> {
 	const q = name.trim().toLowerCase();
 	if (!q) return [];
 	const db = await ensureDb();
-	return Object.values(db.teams ?? {}).filter((t) => (t.name ?? "").toLowerCase() === q);
+	return Object.values(db.teams ?? {}).filter((t) => (t.name ?? "").toLowerCase() === q); db
 }

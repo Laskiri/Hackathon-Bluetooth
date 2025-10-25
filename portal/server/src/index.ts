@@ -11,11 +11,11 @@ app.use(express.json());
 
 // Admin: create a new team
 app.post("/api/admin/teams", async (req, res) => {
-	const { password, fragments } = req.body ?? {};
+	const { password, fragments, name } = req.body ?? {};
 	const fragmentsCount = typeof fragments === "number" && fragments >= 1 ? fragments : 3;
 	const pass = typeof password === "string" && password.length > 0 ? password : generateRandomPassword(8);
 	try {
-		const team = await createTeam(pass, fragmentsCount);
+		const team = await createTeam(pass, fragmentsCount, typeof name === "string" && name.trim().length > 0 ? name.trim() : undefined)
 		const baseUrl = HOST;
 		const fragmentUrls = team.fragments.map((_, idx) => `${baseUrl}/api/teams/${team.id}/fragments/${idx}`);
 		res.json({
