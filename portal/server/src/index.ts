@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { createTeam, getTeam, getFragments, verifyTeamPassword, getLatestTeam } from "./db.js";
+import { createTeam, getTeam, getFragments, verifyTeamPassword, getLatestTeam, findTeamsByName } from "./db.js";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 const HOST = process.env.HOST ?? `http://localhost:${PORT}`;
@@ -15,14 +15,12 @@ app.post("/api/admin/teams", async (req, res) => {
 	const fragmentsCount = typeof fragments === "number" && fragments >= 1 ? fragments : 3;
 	const pass = typeof password === "string" && password.length > 0 ? password : generateRandomPassword(8);
 	try {
-		//broadcast to runestones, uuid and fragment of code.
 		const team = await createTeam(pass, fragmentsCount);
 		const baseUrl = HOST;
 		const fragmentUrls = team.fragments.map((_, idx) => `${baseUrl}/api/teams/${team.id}/fragments/${idx}`);
 		res.json({
 			teamId: team.id,
 			name: team.name,
-			code: team.code,
 			password: team.password,
 			fragments: team.fragments,
 			fragmentUrls
@@ -45,20 +43,46 @@ app.get("/api/teams/:teamId", async (req, res) => {
 	});
 });
 
-//return latest team that was created
-app.get("/api/getLatestTeam", async (req, res) => {
-	return null;
-	const latestTeam = await getLatestTeam();
-	if (!latestTeam) return res.status(404).json({ error: "not found" });
-	res.json({
-		id: latestTeam.id,
-		name: latestTeam.name,
-		createdAt: latestTeam.createdAt,
-		solved: latestTeam.solved
-	});
-	return res.json({ message: "ok" });
+// Resolve friendly team name to team id(s)
+app.get("/api/teams/resolve", async (req, res) => {
+	const raw = String(req.query.name ?? "").trim();
+	if (!raw) return res.status(400).json({ error: "name query parameter required" });
 
+	try {
+		const matches = await findTeamsByName(raw);
+		if (matches.length === 0) return res.status(404).json({ error: "team not found" });
+		if (matches.length === 1) {
+			const t = matches[0];
+			return res.json({ id: t.id, name: t.name });
+		}
+		// multiple matches (rare because createTeam ensures uniqueness for generated names)
+		return res.json({
+			multiple: true,
+			teams: matches.map((t) => ({ id: t.id, name: t.name }))
+		});
+	} catch (err) {
+		console.error("GET /api/teams/resolve error:", err);
+		return res.status(500).json({ error: "internal server error" });
+	}
 });
+
+app.get("/api/getLatestTeam", async (req, res) => {
+	try {
+		const latestTeam = await getLatestTeam();
+		if (!latestTeam) return res.status(404).json({ error: "not found" });
+
+		return res.json({
+			id: latestTeam.id,
+			name: latestTeam.name,
+			createdAt: latestTeam.createdAt,
+			solved: latestTeam.solved,
+		});
+	} catch (err) {
+		console.error("GET /api/getLatestTeam error:", err);
+		return res.status(500).json({ error: "internal server error" });
+	}
+});
+
 // Return all fragments (admin/debug)
 app.get("/api/teams/:teamId/fragments", async (req, res) => {
 	const fr = await getFragments(req.params.teamId);
@@ -95,7 +119,7 @@ app.get("/api/health", async (req, res) => {
 	return res.json({ message: "ok" });
 })
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
 	console.log(`Server running on ${HOST}`);
 });
 
@@ -108,4 +132,3 @@ function generateRandomPassword(length = 8) {
 	}
 	return out;
 }
-

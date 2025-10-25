@@ -38,19 +38,35 @@ async function ensureDb(): Promise<DBSchema> {
 	}
 }
 
-let writeLock = Promise.resolve();
+// keep the writeLock strongly typed as Promise<void>
+let writeLock: Promise<void> = Promise.resolve();
 
+/**
+ * Serializes writes to disk. Returns the value returned by the provided fn.
+ */
 async function withWrite<T>(fn: (db: DBSchema) => Promise<T>): Promise<T> {
-	// simple linearizing lock to avoid races
+	let result: T;
+	// queue a task; writeLock always remains a Promise<void>
 	writeLock = writeLock.then(async () => {
 		const db = await ensureDb();
-		const res = await fn(db);
+		// run user's mutation/read function and capture the result
+		result = await fn(db);
+		// persist to disk
 		await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2), "utf-8");
-		return res;
 	});
-	return writeLock;
+	// wait for our queued task to finish
+	await writeLock;
+	// result has been assigned inside the queued task
+	return result!;
 }
 
+/**
+ * Read-only helper (no locking required)
+ */
+async function withRead<T>(fn: (db: DBSchema) => Promise<T>): Promise<T> {
+	const db = await ensureDb();
+	return fn(db);
+}
 
 function splitIntoFragments(password: string, count: number): string[] {
 	if (count <= 1) return [password];
@@ -67,27 +83,40 @@ function splitIntoFragments(password: string, count: number): string[] {
 	return out;
 }
 
-
 function makeVikingName() {
 	let vikingNames = ["Harald", "Gorm"];
 	let idx = Math.floor(Math.random() * vikingNames.length);
-	return vikingNames[idx]
+	return vikingNames[idx];
 }
 
+/**
+ * Create a team. Ensures generated friendly names don't collide with existing names by appending -2, -3...
+ */
 export async function createTeam(password: string, fragmentsCount = 2): Promise<Team> {
-	const team: Team = {
-		id: randomUUID(),
-		name: makeVikingName(),
-		password,
-		fragments: splitIntoFragments(password, fragmentsCount),
-		createdAt: new Date().toISOString(),
-		solved: false
-	};
-	await withWrite(async (db) => {
+	return withWrite(async (db) => {
+		// collect existing names (lowercased) for quick lookup
+		const existing = new Set(Object.values(db.teams || {}).map((t) => (t.name || "").toLowerCase()));
+
+		let baseName = makeVikingName();
+		let name = baseName;
+		if (existing.has(name.toLowerCase())) {
+			let i = 2;
+			while (existing.has(`${baseName}-${i}`.toLowerCase())) i++;
+			name = `${baseName}-${i}`;
+		}
+
+		const team: Team = {
+			id: randomUUID(),
+			name,
+			password,
+			fragments: splitIntoFragments(password, fragmentsCount),
+			createdAt: new Date().toISOString(),
+			solved: false
+		};
+
 		db.teams[team.id] = team;
-		return null;
+		return team;
 	});
-	return team;
 }
 
 export async function getTeam(teamId: string): Promise<Team | null> {
@@ -134,4 +163,15 @@ export async function verifyTeamPassword(teamId: string, supplied: string): Prom
 export async function getFragments(teamId: string): Promise<string[] | null> {
 	const team = await getTeam(teamId);
 	return team ? team.fragments : null;
+}
+
+/**
+ * Find teams by friendly name (case-insensitive exact match).
+ * Returns an array (possibly empty). Useful for resolving a friendly name to UUID(s).
+ */
+export async function findTeamsByName(name: string): Promise<Team[]> {
+	const q = name.trim().toLowerCase();
+	if (!q) return [];
+	const db = await ensureDb();
+	return Object.values(db.teams ?? {}).filter((t) => (t.name ?? "").toLowerCase() === q);
 }
