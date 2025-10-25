@@ -95,6 +95,28 @@ export async function getTeam(teamId: string): Promise<Team | null> {
 	return db.teams[teamId] ?? null;
 }
 
+export async function getLatestTeam(): Promise<Team | null> {
+	const db = await ensureDb();
+	const teams = Object.values(db.teams ?? {});
+	let latest: Team | null = null;
+
+	for (const t of teams) {
+		if (!t) continue;
+		if (latest === null) {
+			latest = t;
+			continue;
+		}
+
+		const tTs = Date.parse(t.createdAt ?? "");
+		const lTs = Date.parse(latest.createdAt ?? "");
+
+		// Prefer valid timestamps; if both invalid, keep current latest.
+		if (isNaN(tTs) && isNaN(lTs)) continue;
+		if (isNaN(lTs) || (!isNaN(tTs) && tTs > lTs)) latest = t;
+	}
+	return latest;
+}
+
 export async function verifyTeamPassword(teamId: string, supplied: string): Promise<{ ok: boolean; message?: string }> {
 	return withWrite(async (db) => {
 		const team = db.teams[teamId];

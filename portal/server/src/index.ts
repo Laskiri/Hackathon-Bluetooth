@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { createTeam, getTeam, getFragments, verifyTeamPassword } from "./db.js";
+import { createTeam, getTeam, getFragments, verifyTeamPassword, getLatestTeam } from "./db.js";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 const HOST = process.env.HOST ?? `http://localhost:${PORT}`;
@@ -39,17 +39,24 @@ app.get("/api/teams/:teamId", async (req, res) => {
 	if (!team) return res.status(404).json({ error: "not found" });
 	res.json({
 		id: team.id,
-		code: team.code,
 		name: team.name,
 		createdAt: team.createdAt,
 		solved: team.solved
 	});
 });
 
-app.get("/api/teams/latest", async (req, res) => {
-
-
-
+//return latest team that was created
+app.get("/api/getLatestTeam", async (req, res) => {
+	return null;
+	const latestTeam = await getLatestTeam();
+	if (!latestTeam) return res.status(404).json({ error: "not found" });
+	res.json({
+		id: latestTeam.id,
+		name: latestTeam.name,
+		createdAt: latestTeam.createdAt,
+		solved: latestTeam.solved
+	});
+	return res.json({ message: "ok" });
 
 });
 // Return all fragments (admin/debug)
