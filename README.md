@@ -8,7 +8,7 @@ Exstra functionality includes submitting the code and seing the ressurection of 
 ## Runestones
 The "Runestones" Are devices managed by the museum, which are placed strategically eg: 1 in each room. The Runestones are listening/waiting for bluetooth transmittions from artifacts around the room/area and when all of these have been activated and read by the Runestone, the team will be challenged with a quiz/puzzle on the runestone app device, that are related to the artifacts they have activated with nfc around the room.
 
-<video src="Assets/Screen_Recording_20251026_124946_Runetone_app.mp4" controls width="600">></video>
+<video src="Media/Screen_Recording_20251026_124946_Runetone_app.mp4" controls width="600"/>
 
 ## Artifacts 
 Artifacts could be specific exhibitions/ physical things around the room which can have tags/electronics integrated, that when scanned with nfc can advertise bluetooth. For our demo and code we've used 4x esp32 boards. 3x of them were used to demonstrate artifacts and the last one was used a "mock" for nfc scanning by using RSII bluetooth proximity detection instead. 
