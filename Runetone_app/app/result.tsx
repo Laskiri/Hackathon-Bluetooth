@@ -174,7 +174,7 @@ export default function ResultScreen() {
             }}
           >
             <ThemedText style={{textAlign: 'center', fontSize: 23 }}>
-              You have successfully retrieved a part of the code — head to the Christianity room next.
+              Team '{team.name}' You have successfully retrieved a part of the code — head to the Christianity room next.
             </ThemedText>
           </View>
         ) : null}
