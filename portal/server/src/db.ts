@@ -260,7 +260,6 @@ export async function verifyTeamPassword(teamId: string, supplied: string): Prom
 	return withWrite(async (db) => {
 		const team = db.teams[teamId];
 		if (!team) return { ok: false, message: "Team not found" };
-		if (team.solved) return { ok: false, message: "Already solved" };
 		if (team.password === supplied) {
 			team.solved = true;
 			return { ok: true };

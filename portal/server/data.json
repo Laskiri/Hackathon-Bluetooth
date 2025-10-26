@@ -399,7 +399,210 @@
         }
       },
       "createdAt": "2025-10-25T23:43:56.010Z",
-      "solved": false
+      "solved": true
+    },
+    "c511ec13-36e4-4150-9f89-aaa478d99781": {
+      "id": "c511ec13-36e4-4150-9f89-aaa478d99781",
+      "name": "Cool Judges",
+      "password": "Arise from the depths",
+      "fragments": {
+        "0": {
+          "pass_fragment": "Arise from the depths",
+          "solved": true,
+          "solvedAt": "2025-10-26T08:26:28.646Z",
+          "score": 100
+        }
+      },
+      "createdAt": "2025-10-26T08:25:28.975Z",
+      "solved": true
+    },
+    "fc4e2b72-4274-4ff2-9b23-df016759f7fc": {
+      "id": "fc4e2b72-4274-4ff2-9b23-df016759f7fc",
+      "name": "Taliha",
+      "password": "Work pls",
+      "fragments": {
+        "0": {
+          "pass_fragment": "Work pls",
+          "solved": true,
+          "solvedAt": "2025-10-26T08:28:55.850Z",
+          "score": 100
+        }
+      },
+      "createdAt": "2025-10-26T08:28:11.617Z",
+      "solved": true
+    },
+    "a0c29318-501e-445d-9b23-a8e6a2a69898": {
+      "id": "a0c29318-501e-445d-9b23-a8e6a2a69898",
+      "name": "Taliha3",
+      "password": "Work pls",
+      "fragments": {
+        "0": {
+          "pass_fragment": "Work pls",
+          "solved": true,
+          "solvedAt": "2025-10-26T08:32:47.350Z",
+          "score": 100
+        }
+      },
+      "createdAt": "2025-10-26T08:31:58.383Z",
+      "solved": true
+    },
+    "f4e6ff52-307f-4e42-b807-c670cb0537a9": {
+      "id": "f4e6ff52-307f-4e42-b807-c670cb0537a9",
+      "name": "lkdkdjd",
+      "password": "hahaha",
+      "fragments": {
+        "0": {
+          "pass_fragment": "hah",
+          "solved": true,
+          "solvedAt": "2025-10-26T08:39:11.685Z",
+          "score": 98
+        },
+        "1": {
+          "pass_fragment": "aha",
+          "solved": false,
+          "solvedAt": ""
+        }
+      },
+      "createdAt": "2025-10-26T08:37:56.266Z",
+      "solved": true
+    },
+    "f103bdee-69a2-4011-8987-5491d3e61d77": {
+      "id": "f103bdee-69a2-4011-8987-5491d3e61d77",
+      "name": "mag-4",
+      "password": "nus",
+      "fragments": {
+        "0": {
+          "pass_fragment": "nus",
+          "solved": false,
+          "solvedAt": ""
+        }
+      },
+      "createdAt": "2025-10-26T08:55:31.900Z",
+      "solved": true
+    },
+    "39f7ca2d-f1d8-4578-8ad5-88871adbcea3": {
+      "id": "39f7ca2d-f1d8-4578-8ad5-88871adbcea3",
+      "name": "Svend",
+      "password": "Tykskæg",
+      "fragments": {
+        "0": {
+          "pass_fragment": "Tykskæg",
+          "solved": true,
+          "solvedAt": "2025-10-26T09:00:15.676Z",
+          "score": 96
+        }
+      },
+      "createdAt": "2025-10-26T08:57:35.745Z",
+      "solved": true
+    },
+    "1cc36312-f81a-4fea-8f51-344e93a05aa7": {
+      "id": "1cc36312-f81a-4fea-8f51-344e93a05aa7",
+      "name": "Harald-2",
+      "password": "Arise",
+      "fragments": {
+        "0": {
+          "pass_fragment": "Arise",
+          "solved": true,
+          "solvedAt": "2025-10-26T09:07:55.433Z",
+          "score": 98
+        }
+      },
+      "createdAt": "2025-10-26T09:06:19.027Z",
+      "solved": true
+    },
+    "2e6ed58e-e400-4faa-9896-17b0caabff9c": {
+      "id": "2e6ed58e-e400-4faa-9896-17b0caabff9c",
+      "name": "Yellowstone",
+      "password": "viking come",
+      "fragments": {
+        "0": {
+          "pass_fragment": "viking come",
+          "solved": true,
+          "solvedAt": "2025-10-26T09:28:34.644Z",
+          "score": 96
+        }
+      },
+      "createdAt": "2025-10-26T09:26:05.509Z",
+      "solved": true
+    },
+    "123c7706-752f-4f76-b8e6-3456536cf1e1": {
+      "id": "123c7706-752f-4f76-b8e6-3456536cf1e1",
+      "name": "Harald-3",
+      "password": "rite",
+      "fragments": {
+        "0": {
+          "pass_fragment": "rite",
+          "solved": false,
+          "solvedAt": ""
+        }
+      },
+      "createdAt": "2025-10-26T09:33:21.201Z",
+      "solved": true
+    },
+    "07badd2a-7521-4700-9be0-acf1e8a18ab2": {
+      "id": "07badd2a-7521-4700-9be0-acf1e8a18ab2",
+      "name": "Bluetooth",
+      "password": "Harald",
+      "fragments": {
+        "0": {
+          "pass_fragment": "Harald",
+          "solved": true,
+          "solvedAt": "2025-10-26T09:38:39.722Z",
+          "score": 98
+        }
+      },
+      "createdAt": "2025-10-26T09:37:20.573Z",
+      "solved": true
+    },
+    "20404782-54c0-4038-8a4c-ba3fc3a6755e": {
+      "id": "20404782-54c0-4038-8a4c-ba3fc3a6755e",
+      "name": "test",
+      "password": "f",
+      "fragments": {
+        "0": {
+          "pass_fragment": "f",
+          "solved": true,
+          "solvedAt": "2025-10-26T09:49:32.409Z",
+          "score": 100
+        },
+        "1": {
+          "pass_fragment": "",
+          "solved": false,
+          "solvedAt": ""
+        }
+      },
+      "createdAt": "2025-10-26T09:48:52.656Z",
+      "solved": true
+    },
+    "ccd22f37-9cc9-453a-8b51-cb53f59e9142": {
+      "id": "ccd22f37-9cc9-453a-8b51-cb53f59e9142",
+      "name": "har",
+      "password": "the code",
+      "fragments": {
+        "0": {
+          "pass_fragment": "the code",
+          "solved": true,
+          "solvedAt": "2025-10-26T09:53:44.949Z",
+          "score": 98
+        }
+      },
+      "createdAt": "2025-10-26T09:52:23.710Z",
+      "solved": true
+    },
+    "7fd051df-2d37-4cbb-b3f3-e88b71bcced2": {
+      "id": "7fd051df-2d37-4cbb-b3f3-e88b71bcced2",
+      "name": "Forkbeard",
+      "password": "Gorm hello",
+      "fragments": {
+        "0": {
+          "pass_fragment": "Gorm hello",
+          "solved": true,
+          "solvedAt": "2025-10-26T10:22:29.868Z",
+          "score": 98
+        }
+      },
+      "createdAt": "2025-10-26T10:21:09.034Z",
+      "solved": true
     }
   }
 }

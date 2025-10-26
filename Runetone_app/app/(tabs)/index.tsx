@@ -45,10 +45,8 @@ export default function DetectionScreen() {
       try {
         const result = await get(); // returns parsed JSON and sets `data` inside the hook
         if (!mounted) return;
-        console.log(team)
-        console.log(result)
         if (result && !result.solved) {
-          console.log('got team', result);
+
           try {
             setTeam(result);
           } catch (e) {
@@ -57,12 +55,10 @@ export default function DetectionScreen() {
           }
           clearRetry();
         } else {
-          console.log('no team returned (server returned null/empty), retrying in 2s');
           clearRetry();
           teamRetryRef.current = setTimeout(attempt, 2000);
         }
       } catch (err) {
-        console.warn('fetch failed, will retry in 2s', err);
         if (!mounted) return;
         clearRetry();
         teamRetryRef.current = setTimeout(attempt, 2000);
