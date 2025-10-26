@@ -19,16 +19,13 @@ allprojects {
     maven { url 'https://www.jitpack.io' }
   }
 }
+kotlinOptions {
+        jvmTarget = "17"
+}
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
 
 // Ensure Kotlin compilation targets JVM 17 to match Java toolchain used by Expo/EAS.
 // This avoids the "Inconsistent JVM Target Compatibility" error during Gradle/Kotlin compile.
-subprojects {
-  afterEvaluate { project ->
-    project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { task ->
-      task.kotlinOptions { jvmTarget = "17" }
-    }
-  }
-}
+\
