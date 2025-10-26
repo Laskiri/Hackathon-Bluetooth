@@ -17,41 +17,31 @@ export interface QuizData {
 }
 
 export const QUIZ_DATA: QuizData = {
-  runestoneName: 'Artefacts Runestone',
+  runestoneName: 'Artifacts Runestone',
   questions: [
     {
       id: 'q1',
-      artifactId: 'artifact-1',
-      question: 'Which material was commonly used to make Viking swords?',
+      artifactId: 'artifact-2',
+      question: 'Vikings often believed that symbols carved into their weapons could protect them in battle or bring them fortune. What did they commonly carve on their axes to channel luck or faith?',
       answers: [
-        { id: 'a1', text: 'Bronze' },
-        { id: 'a2', text: 'Iron/Steel' },
-        { id: 'a3', text: 'Wood' },
-      ],
-      correctAnswerId: 'a2',
-    },
-    {
-      id: 'q2',
-      artifactId: 'artifact-3',
-      question: 'Runestones were primarily used to:',
-      answers: [
-        { id: 'a1', text: 'Record important events or memorials' },
-        { id: 'a2', text: 'Store grain' },
-        { id: 'a3', text: 'Weave fabrics' },
+        { id: 'a1', text: 'Runes (or Crosses)' },
+        { id: 'a2', text: 'Dragon scales' },
+        { id: 'a3', text: 'Knot patterns' },
+        { id: 'a4', text: 'Sun symbols' },
       ],
       correctAnswerId: 'a1',
     },
     {
-      id: 'q3',
-      artifactId: 'artifact-4',
-      question: 'Which of these items is commonly found as a grave good in Viking burials?',
+      id: 'q2',
+      artifactId: 'artifact-1',
+      question: 'Not every warrior could wield the finest weapons. Among Vikings, which weapon was considered a mark of the elite, symbolizing status and honor in battle?:',
       answers: [
-        { id: 'a1', text: 'Smartphone' },
-        { id: 'a2', text: 'Brooch' },
-        { id: 'a3', text: 'Plastic bottle' },
-        { id: 'a4', text: 'Glass jar' },
+        { id: 'a1', text: 'Spears' },
+        { id: 'a2', text: 'Bows' },
+        { id: 'a3', text: 'Swords' },
+        { id: 'a4', text: 'Axes' },
       ],
-      correctAnswerId: 'a2',
+      correctAnswerId: 'a3',
     },
   ],
 };

@@ -83,7 +83,7 @@ export default function QuizScreen() {
       </Animated.View>
 
       <View style={styles.questionBox}>
-        <ThemedText type="subtitle">{question.question}</ThemedText>
+        <ThemedText type="subtitle" style={[{marginBottom: 32}]}>{question.question}</ThemedText>
         <FlatList
           data={question.answers}
           keyExtractor={a => a.id}

@@ -45,7 +45,9 @@ export default function DetectionScreen() {
       try {
         const result = await get(); // returns parsed JSON and sets `data` inside the hook
         if (!mounted) return;
-        if (result) {
+        console.log(team)
+        console.log(result)
+        if (result && !result.solved) {
           console.log('got team', result);
           try {
             setTeam(result);
@@ -117,9 +119,8 @@ export default function DetectionScreen() {
   }, [team]);
 
   const progress = Math.round((detectedArtifacts.length / ARTIFACTS.length) * 100);
-
   // If no active team yet, show a simple message and don't render the detection UI
-  if (!team) {
+  if (!team || team.solved == true) {
     return (
       <ThemedView style={[styles.container, styles.centered]}>
         <ThemedText>No Museum experience initiated, head to the reception to start one</ThemedText>
@@ -184,7 +185,7 @@ export default function DetectionScreen() {
         </View>
       </Animated.View>
 
-      {error ? <ThemedText style={[styles.error, { color: incorrectAnswer }]}>{error}</ThemedText> : null}
+      {/* {error ? <ThemedText style={[styles.error, { color: incorrectAnswer }]}>{error}</ThemedText> : null} */}
 
       <FlatList
         data={ARTIFACTS}
