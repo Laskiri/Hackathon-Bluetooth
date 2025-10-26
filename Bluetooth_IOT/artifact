@@ -1,0 +1,139 @@
+#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <BLEAdvertisedDevice.h>
+#include <Arduino.h>
+
+// --- New includes for Server/Advertising ---
+#include <BLEServer.h>
+#include <BLEAdvertising.h>
+
+// --- IMPORTANT ---
+// Make sure this is the MAC address of the device you want to track!
+#define BEACON_MAC_ADDRESS "38:18:2b:8b:57:9a"
+
+// --- UUIDs for this device to advertise AFTER it finds the beacon ---
+#define SERVICE_UUID "12345678-1234-1234-1234-123456789012"
+#define CHARACTERISTIC_UUID "abcdef12-1234-1234-1234-123456789012"
+
+const int LED_PIN = 23; // The pin for your LED
+BLEAddress *pBeaconAddress;
+bool isBeaconFound = false; // The boolean you asked for
+
+/**
+ * @brief Scans for a specific BLE device and returns its RSSI.
+ */
+int getBeaconRSSI()
+{
+  int foundRSSI = -127; // "Not found" value
+
+  // 1. Get the BLE Scan object
+  BLEScan *pBLEScan = BLEDevice::getScan();
+  pBLEScan->setActiveScan(true);
+  pBLEScan->setInterval(100);
+  pBLEScan->setWindow(99);
+
+  // 2. Start the scan (1 second)
+  BLEScanResults results = pBLEScan->start(1, false);
+
+  // 3. Loop through results
+  for (int i = 0; i < results.getCount(); i++)
+  {
+    BLEAdvertisedDevice device = results.getDevice(i);
+
+    // 4. Check if this device is our Beacon
+    if (device.getAddress().equals(*pBeaconAddress))
+    {
+      foundRSSI = device.getRSSI();
+      break;
+    }
+  }
+
+  pBLEScan->clearResults();
+  return foundRSSI;
+}
+
+void startBLEAdvertising()
+{
+  Serial.println("Stopping scan and starting BLE advertising...");
+
+  // Stop the scan
+  BLEScan *pBLEScan = BLEDevice::getScan();
+  pBLEScan->stop();
+
+  // Create BLE Server
+  BLEServer *pServer = BLEDevice::createServer();
+
+  // Create BLE Service
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+
+  // Create BLE Characteristic
+  BLECharacteristic *pCharacteristic = pService->createCharacteristic(
+      CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+  pCharacteristic->setValue("Beacon Found!"); // Set a value for others to read
+
+  // Start the service
+  pService->start();
+
+  // Get the advertising object
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06); // functions that help with iPhone connections issue
+  pAdvertising->setMinPreferred(0x12);
+
+  pServer->startAdvertising(); // Start the broadcast
+  Serial.println("Artifact Axe is now advertising.");
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println("Starting Artifact Axe...");
+
+  // Set up the LED pin as an output
+  pinMode(LED_PIN, OUTPUT);
+
+  // Convert the string address to a BLEAddress object
+  pBeaconAddress = new BLEAddress(BEACON_MAC_ADDRESS);
+
+  // Initialize BLE. We pass an empty string because it's
+  // starting as a client (scanner).
+  BLEDevice::init("Artifact Axe");
+}
+
+void loop()
+{
+  // First, check if we have already found the beacon
+  if (isBeaconFound == false)
+  {
+    // --- We are still searching ---
+
+    // 1. Scan for the beacon
+    int rssi = getBeaconRSSI();
+
+    // 2. Check if we found it AND it's close enough (RSSI > -40)
+    if (rssi != -127 && rssi > -40)
+    {
+      // --- BEACON IS FOUND AND CLOSE ---
+      Serial.println("---");
+      Serial.println("Beacon has been found!");
+      Serial.print("Final RSSI: ");
+      Serial.print(rssi);
+      Serial.println(" dBm");
+      Serial.println("---");
+
+      isBeaconFound = true;        // Set the boolean state, this will stop future scans
+      digitalWrite(LED_PIN, HIGH); // Turn on the LED
+
+      // --- START ADVERTISING ---
+      startBLEAdvertising(); // Switch roles to a BLE server
+    }
+    else
+    {
+      Serial.println("Searching for beacon...");
+    }
+  }
+
+  delay(500);
+}
